@@ -1,0 +1,102 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "re-target",
+  "account_id": "675d1f3c85dbdf22aebbd7ade81daecb",
+  "workers_dev": false,
+  "preview_urls": false,
+  "secrets": {
+    "required": [
+      "ADMIN_API_TOKEN",
+      "ADMIN_PASSWORD_HASH",
+      "COURIER_ENCRYPTION_KEY",
+      "WAHA_BASE_URL",
+      "WAHA_API_KEY",
+      "CF_ACCESS_CLIENT_ID",
+      "CF_ACCESS_CLIENT_SECRET",
+      "WHATSAPP_WEBHOOK_SECRET",
+      "MEDIA_PREPARATION_KEY",
+      "ADMIN_PHONE",
+      "CAMPAIGN_TEST_NUMBERS"
+    ]
+  },
+  "routes": [
+    {
+      "pattern": "retarget.nahidlabs.com",
+      "custom_domain": true
+    }
+  ],
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  },
+  "vars": {
+    "APP_ENV": "production",
+    "DEPLOYMENT_ID": "local",
+    "CAMPAIGN_MEDIA_ORIGIN": "https://retarget.nahidlabs.com",
+    "MEDIA_PREPARATION_URL": "https://media.nahidlabs.com"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "re-target-production",
+      "migrations_dir": "migrations",
+      "database_id": "d5e44156-1198-49b6-a8e8-ec7dca29d746",
+      "remote": true
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "re-target-media",
+      "remote": true
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "LEAD_SYNC",
+        "queue": "re-target-lead-sync",
+        "remote": true
+      },
+      {
+        "binding": "CAMPAIGN_QUEUE",
+        "queue": "re-target-campaigns",
+        "remote": true
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "re-target-lead-sync",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_retries": 5,
+        "max_concurrency": 2
+      },
+      {
+        "queue": "re-target-campaigns",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_retries": 5,
+        "max_concurrency": 2,
+        "dead_letter_queue": "re-target-campaigns-dlq"
+      },
+      {
+        "queue": "re-target-campaigns-dlq",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_retries": 5,
+        "max_concurrency": 1
+      }
+    ]
+  },
+  "triggers": {
+    "crons": [
+      "*/5 * * * *"
+    ]
+  }
+}

@@ -1,0 +1,1 @@
+CREATE INDEX `campaigns_retention` ON `campaigns` (`status`,`updated_at`);

@@ -1,0 +1,12 @@
+---
+import CampaignWorkspace from '../../../../components/CampaignWorkspace.astro';
+import { isCampaignView } from '../../../../lib/campaign-routes';
+import { currentAccount } from '../../../../lib/auth';
+const step = Astro.params.step;
+if (step && !isCampaignView(step)) return new Response('Page not found', { status: 404 });
+const account = await currentAccount(Astro.cookies);
+if (!account) return Astro.redirect('/');
+const base = account.role === 'admin' ? '/admin' : '/app';
+if (base !== '/admin') return Astro.redirect(`${base}/campaigns/${Astro.params.id}/${step || 'audience'}`);
+---
+<CampaignWorkspace base={base} id={Astro.params.id!} view={step} phone={account.phone} role={account.role} companyName={account.companyName} />

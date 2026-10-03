@@ -1,0 +1,9 @@
+<button class="secondary" id="sync-leads" type="button" disabled aria-busy="false"><span class="sync-spinner" hidden><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" opacity=".2"/><path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span>Sync now</span></button>
+<style is:global>
+  #sync-leads { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  #sync-leads .sync-spinner { display: inline-flex; width: 18px; height: 18px; }
+  #sync-leads .sync-spinner svg { width: 18px; height: 18px; animation: sync-spin .8s linear infinite; }
+  #sync-leads [hidden] { display: none; }
+  @keyframes sync-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { #sync-leads .sync-spinner svg { animation: none; } }
+</style>

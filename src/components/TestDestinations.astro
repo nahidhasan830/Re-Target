@@ -1,0 +1,55 @@
+---
+import LoadingRegion from './LoadingRegion.astro';
+---
+<section class="test-destinations" aria-labelledby="test-destinations-title" data-test-settings>
+  <header class="destinations-header">
+    <div><h2 id="test-destinations-title">Test destinations</h2><p>Preview campaigns on numbers you control.</p></div>
+    <span id="test-number-count" class="number-count" aria-label="Test numbers used">0 / 10</span>
+  </header>
+  <LoadingRegion id="test-settings-loading" variant="destinations" label="Loading test destinations…">
+  <form id="test-settings">
+    <div class="destinations-fields">
+      <label for="test-numbers">WhatsApp numbers</label>
+      <textarea id="test-numbers" name="numbers" rows="3" placeholder="01XXXXXXXXX" required spellcheck="false" aria-describedby="test-numbers-help"></textarea>
+      <p id="test-numbers-help" class="field-help">Up to 10 numbers, one per line.</p>
+      <p class="field-help account-note">Available to every campaign in your account.</p>
+    </div>
+    <div class="destinations-actions"><button class="primary" type="submit">Verify and save</button><p id="test-settings-message" role="status"></p></div>
+  </form>
+  </LoadingRegion>
+  <button class="secondary" id="retry-test-settings" type="button" hidden>Retry loading numbers</button>
+</section>
+<script>
+  import { initTestSettings } from '../lib/campaign-ui';
+  initTestSettings();
+</script>
+<style>
+  .test-destinations { min-width:0;border:1px solid var(--line);border-radius:16px;background:var(--surface);display:flex;flex-direction:column;overflow:hidden; }
+  .test-destinations :global(#test-settings-loading) { display:flex;flex-direction:column;flex:1; }
+  .test-destinations :global(#test-settings-loading > .region-skeleton) { padding:24px; }
+  .test-destinations :global(#test-settings-loading > .region-content) { display:flex;flex-direction:column;flex:1; }
+  .test-destinations :global(#test-settings-loading[aria-busy=true] > .region-content) { display:none; }
+  #retry-test-settings { align-self:flex-start;margin:0 24px 24px; }
+  #retry-test-settings[hidden] { display:none; }
+  .destinations-header { display:flex;align-items:flex-start;justify-content:space-between;gap:16px;min-height:104px;padding:20px 24px;border-bottom:1px solid var(--line); }
+  h2 { margin:0;font-size:1.125rem;line-height:1.4;font-weight:650;letter-spacing:-.02em; }
+  .destinations-header p { margin:7px 0 0;color:var(--muted);font-size:.875rem; }
+  .number-count { flex-shrink:0;display:inline-flex;padding:6px 10px;border-radius:6px;background:var(--paper);color:var(--muted);font-size:.75rem;font-weight:600;font-variant-numeric:tabular-nums; }
+  .test-destinations:has(:global(#test-settings-loading[aria-busy=true])) .number-count { visibility:hidden; }
+  form { display:flex;flex-direction:column;flex:1;min-width:0; }
+  .destinations-fields { flex:1;padding:24px;display:flex;flex-direction:column; }
+  label { display:block;font-size:.8125rem;font-weight:600;margin-bottom:8px; }
+  textarea,input { display:block;width:100%;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;caret-color:var(--green); }
+  textarea { flex:1;padding:12px 14px;line-height:1.8;resize:vertical;min-height:150px;font-variant-numeric:tabular-nums; }
+  input { min-height:48px;padding:12px 14px; }
+  textarea::placeholder,input::placeholder { color:var(--muted); }
+  textarea[aria-invalid="true"] { border-color:var(--error); }
+  .field-help { margin:8px 0 20px;color:var(--muted);font-size:.8125rem; }
+  .account-note { margin-bottom:0; }
+  .destinations-actions { padding:20px 24px;border-top:1px solid var(--line);display:flex;align-items:center;flex-wrap:wrap;gap:12px 16px; }
+  .destinations-actions button { width:auto; }
+  #test-settings-message { margin:0;font-size:.8125rem;color:var(--green);overflow-wrap:anywhere; }
+  #test-settings-message:empty { display:none; }
+  #test-settings-message.error { color:var(--error); }
+  @media(max-width:760px) { .destinations-header { min-height:auto;padding:20px; }.destinations-fields { padding:20px; }.destinations-actions { padding:16px 20px; }textarea { min-height:132px; } }
+</style>

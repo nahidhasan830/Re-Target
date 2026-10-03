@@ -1,0 +1,30 @@
+---
+import Skeleton from './Skeleton.astro';
+interface Props { base:string }
+const {base}=Astro.props;
+---
+<section class="campaign-root" data-campaign-list data-base={base}>
+  <p class="campaign-list-message is-loading" id="campaign-list-message" role="status">Loading campaigns…</p>
+  <div class="campaign-list-panel" id="campaign-list-panel" aria-busy="true">
+    <div id="campaign-list-loading" aria-hidden="true">
+      <Skeleton variant="campaigns" />
+    </div>
+    <div class="campaign-list" id="campaign-list" hidden></div>
+    <div class="campaign-empty" id="campaign-empty" hidden>
+      <svg class="campaign-empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 10 15-6v16L4 14v-4ZM7 15l2 6h4l-2-5M4 10H2v4h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h2 id="campaign-empty-title">No campaigns yet</h2>
+      <p class="muted" id="campaign-empty-description">Prepare your first offer for your delivered customers.</p>
+      <a class="primary" id="campaign-empty-create" href={`${base}/campaigns/new`}>Create campaign</a>
+    </div>
+    <div class="campaign-empty" id="campaign-list-error" hidden>
+      <h2>Could not load campaigns</h2>
+      <p class="muted">Try again to load your campaigns.</p>
+      <button class="secondary" id="retry-campaigns" type="button">Try again</button>
+    </div>
+  </div>
+  <div class="campaign-pagination" id="campaign-pagination" hidden><button class="secondary" id="campaign-previous" disabled>Previous</button><span id="campaign-page"></span><button class="secondary" id="campaign-next" disabled>Next</button></div>
+</section>
+<script>
+  import { initCampaignList } from '../lib/campaign-ui';
+  initCampaignList();
+</script>

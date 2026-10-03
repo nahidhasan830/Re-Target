@@ -1,0 +1,17 @@
+services:
+  media-preparation:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3001"
+    environment:
+      MEDIA_PREPARATION_KEY: ${MEDIA_PREPARATION_KEY:?Set a private preparation key}
+    read_only: true
+    tmpfs:
+      - /tmp:size=536870912,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    cpus: 2
+    mem_limit: 1g

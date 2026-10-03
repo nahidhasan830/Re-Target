@@ -1,0 +1,17 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import AccountSettings from '../../components/AccountSettings.astro';
+import { currentAccount } from '../../lib/auth';
+import { accountSettings } from '../../lib/account-settings';
+const account = await currentAccount(Astro.cookies);
+if (!account) return Astro.redirect('/', 302);
+if (account.role !== 'user') return Astro.redirect('/admin', 302);
+const state = await accountSettings(Astro.request, Astro.cookies, Astro.url, account);
+if (state.saved) return Astro.redirect(`/app/account?saved=${state.form}`, 303);
+Astro.response.status = state.status;
+if (state.status === 429) Astro.response.headers.set('Retry-After', '900');
+---
+<DashboardLayout title="Account" active="account" role="user" phone={account.phone} companyName={account.companyName}>
+  <span slot="header-meta" aria-label="Login phone number">{account.phone}</span>
+  <AccountSettings account={account} state={state} saved={Astro.url.searchParams.get('saved')} />
+</DashboardLayout>

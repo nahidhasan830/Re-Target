@@ -1,0 +1,38 @@
+name: re-target-waha
+
+services:
+  waha:
+    image: devlikeapro/waha:arm@sha256:b4216daddb7d5c1eb3ab99e608b76a005ec7523e766f923939d229718df4aafb
+    platform: linux/arm64
+    restart: unless-stopped
+    init: true
+    shm_size: 1gb
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file: .env
+    environment:
+      WHATSAPP_DEFAULT_ENGINE: WPP
+      WAHA_PRINT_QR: "false"
+      WHATSAPP_SWAGGER_ENABLED: "false"
+      WAHA_DASHBOARD_ENABLED: "true"
+    volumes:
+      - sessions:/app/.sessions
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/sessions',{headers:{'X-Api-Key':process.env.WAHA_API_KEY}}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  sessions:
+    name: re-target-waha-sessions

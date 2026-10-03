@@ -1,0 +1,121 @@
+---
+import { courierProviders, courierFields, courierNames } from '../lib/courier-validation';
+import type { CourierSettingsState } from '../lib/courier-settings';
+import SuccessFeedback from './SuccessFeedback.astro';
+interface Props { state: CourierSettingsState; action: string; saved: string | null }
+const { state, action, saved } = Astro.props;
+---
+
+<p class="form-message" role="alert" hidden={!state.message}>{state.message}</p>
+<div class="courier-grid">
+  {courierProviders.map((provider) => {
+    const form = state.forms[provider];
+    return <section class="courier-panel" aria-labelledby={`${provider}-title`}>
+      <header class="courier-header"><h2 id={`${provider}-title`}>{courierNames[provider]}</h2><span class:list={['credential-status', { 'is-saved': form.saved }]}>{form.connected ? 'Connected' : form.saved ? 'Saved' : form.legacy ? 'Update login' : 'Not set up'}</span></header>
+      <form method="post" action={action} data-courier-form={provider} data-saved={String(form.saved)} data-connected={String(form.connected)}>
+        <input type="hidden" name="provider" value={provider} />
+        <div class="courier-fields">
+          {courierFields[provider].map((field) => {
+            const id = `${provider}-${field.name}`;
+            const error = form.errors[field.name];
+            return <div class="field">
+              <label for={id}>{field.label}</label>
+              <div class:list={{ 'secret-wrap': field.secret }}>
+                <input id={id} name={field.name} type={field.secret ? 'password' : field.type ?? 'text'} autocomplete={field.secret ? 'new-password' : 'off'} value={field.secret ? undefined : form.values[field.name]} placeholder={field.secret && form.saved ? 'Saved · enter to replace' : undefined} required={!field.secret || !form.saved} maxlength={field.maximum} spellcheck="false" autocapitalize="none" aria-invalid={error ? 'true' : undefined} aria-describedby={`${id}-error`} />
+                {field.secret && <button class="secret-toggle" type="button" aria-label={`Show ${courierNames[provider]} ${field.label.toLowerCase()}`} aria-controls={id} aria-pressed="false" hidden>
+                  <svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 3 18 18M10.6 5.1 12 5c6.5 0 10 7 10 7a19 19 0 0 1-3.1 3.9M6.1 6.1A22 22 0 0 0 2 12s3.5 7 10 7a12 12 0 0 0 5.9-1.9M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                </button>}
+              </div>
+              <p class="field-error" id={`${id}-error`} hidden={!error}>{error}</p>
+            </div>;
+          })}
+          {form.legacy && <p class="field-hint">Enter your merchant login to replace the saved API keys.</p>}
+        </div>
+        <p class="form-message" role="alert" hidden={!form.message}>{form.message}</p>
+        <div class="form-footer"><button class="primary" type="submit" name="intent" value={form.message && form.saved ? 'reconnect' : 'connect'} disabled={Boolean(state.message) || form.connected} data-idle={form.connected ? 'Update connection' : form.message && form.saved ? 'Reconnect' : 'Connect'}>{form.connected ? 'Update connection' : form.message && form.saved ? 'Reconnect' : 'Connect'}</button>
+          <p class="save-status" role="status" aria-atomic="true"><SuccessFeedback label={Astro.url.searchParams.get('connected') === provider && form.connected ? 'Connected' : 'Saved'} message={Astro.url.searchParams.get('connected') === provider && form.connected ? 'Courier connected.' : saved === provider && form.saved ? 'Credentials saved.' : ''} /></p></div>
+      </form>
+    </section>;
+  })}
+</div>
+<script>
+  import { validateCourier, type CourierProvider, type CourierErrors } from '../lib/courier-validation';
+  import { setFeedback } from '../lib/feedback';
+  document.querySelectorAll<HTMLButtonElement>('.secret-toggle').forEach((toggle) => {
+    const input = document.getElementById(toggle.getAttribute('aria-controls')!) as HTMLInputElement;
+    const label = toggle.getAttribute('aria-label')!.slice(5);
+    toggle.hidden = false;
+    toggle.addEventListener('click', () => {
+      const visible = input.type === 'password';
+      input.type = visible ? 'text' : 'password';
+      toggle.setAttribute('aria-label', `${visible ? 'Hide' : 'Show'} ${label}`);
+      toggle.setAttribute('aria-pressed', String(visible));
+    });
+  });
+  document.querySelectorAll<HTMLFormElement>('[data-courier-form]').forEach((form) => {
+    form.noValidate = true;
+    const provider = form.dataset.courierForm as CourierProvider;
+    const buttons = Array.from(form.querySelectorAll<HTMLButtonElement>('button[type="submit"]'));
+    const status = form.querySelector<HTMLElement>('.save-status')!;
+    const fields = Array.from(form.querySelectorAll<HTMLInputElement>('input[name]:not([type="hidden"])'));
+    let busy = false;
+    const initialValues = fields.map(field => field.value);
+    const unchanged = () => form.dataset.connected === 'true' && fields.every((field, index) => field.value === initialValues[index]);
+    const validate = () => validateCourier(provider, Object.fromEntries(fields.map((field) => [field.name, field.value])), form.dataset.saved === 'true');
+    const showErrors = (errors: CourierErrors) => fields.forEach((field) => {
+      const error = errors[field.name];
+      field.setAttribute('aria-invalid', String(Boolean(error)));
+      const message = document.getElementById(`${field.id}-error`)!;
+      message.textContent = error ?? ''; message.hidden = !error;
+    });
+    fields.forEach((field) => field.addEventListener('input', () => {
+      if (field.getAttribute('aria-invalid') === 'true') showErrors(validate().errors);
+      buttons.forEach(button => { button.disabled = busy || Boolean(document.querySelector('main > .form-message:not([hidden])')) || unchanged(); });
+      if (!busy) setFeedback(status, '');
+      form.querySelector<HTMLElement>('.form-message')!.hidden = true;
+    }));
+    form.addEventListener('submit', (event) => {
+      if (busy) { event.preventDefault(); return; }
+      const result = validate(); showErrors(result.errors);
+      if (!result.valid) { event.preventDefault(); fields.find((field) => result.errors[field.name])?.focus(); return; }
+      const submitter = event.submitter as HTMLButtonElement | null;
+      const intent = submitter?.value ?? 'connect';
+      const action = document.createElement('input'); action.type = 'hidden'; action.name = 'intent'; action.value = intent; action.dataset.pendingIntent = ''; form.appendChild(action);
+      busy = true; buttons.forEach(button => { button.disabled = true; });
+      if (submitter) submitter.textContent = 'Connecting…';
+      setFeedback(status, 'Connecting to your courier…'); form.setAttribute('aria-busy', 'true');
+    });
+    window.addEventListener('pageshow', () => {
+      if (busy) setFeedback(status, '');
+      busy = false; buttons.forEach(button => { button.disabled = Boolean(document.querySelector('main > .form-message:not([hidden])')) || unchanged(); button.textContent = button.dataset.idle!; });
+      form.querySelector('[data-pending-intent]')?.remove(); form.removeAttribute('aria-busy');
+    });
+  });
+  document.querySelector<HTMLInputElement>('[aria-invalid="true"]')?.focus();
+</script>
+<style>
+  .courier-heading { margin-bottom: 24px; } .courier-heading .intro { margin: 0; }
+  .courier-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: stretch; }
+  .courier-panel { min-width: 0; padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); display: flex; flex-direction: column; }
+  .courier-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  h2 { margin: 0; font-size: 1.125rem; font-weight: 650; line-height: 1.4; letter-spacing: -.02em; }
+  .credential-status { flex-shrink: 0; padding: 4px 10px; background: var(--paper); color: var(--muted); border-radius: 6px; font-size: .75rem; }
+  .credential-status.is-saved { color: var(--green); background: var(--green-soft); }
+  form { display: flex; flex-direction: column; flex: 1; margin-top: 24px; }
+  .courier-fields { flex: 1; } .field + .field { margin-top: 16px; }
+  label { display: block; margin-bottom: 6px; font-size: .875rem; font-weight: 600; }
+  input:not([type="hidden"]) { width: 100%; height: 48px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); padding: 10px 14px; font-size: 1rem; caret-color: var(--green); }
+  input::placeholder { color: var(--muted); opacity: 1; font-size: .875rem; } input:hover:not(:disabled) { border-color: var(--muted); } input[aria-invalid="true"] { border-color: var(--error); }
+  .secret-wrap { position: relative; } .secret-wrap input { padding-right: 56px; }
+  .secret-toggle { position: absolute; top: 2px; right: 2px; width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+  .secret-toggle:hover:not(:disabled) { color: var(--ink); background: var(--green-soft); } .secret-toggle:active:not(:disabled) { background: var(--paper); } .secret-toggle svg { width: 20px; height: 20px; }
+  .eye-off, .secret-toggle[aria-pressed="true"] .eye { display: none; } .secret-toggle[aria-pressed="true"] .eye-off { display: block; }
+  .field-error, .field-hint { margin: 6px 0 0; font-size: .8125rem; line-height: 1.4; } .field-error { color: var(--error); } .field-hint { color: var(--muted); margin-top: 12px; }
+  .form-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; padding-top: 24px; } .form-footer .primary { width: auto; }
+  .save-status { margin: 0; color: var(--green); font-size: .8125rem; line-height: 1.4; } .save-status:empty { display: none; }
+  .form-message { padding: 10px 14px; background: #f7e7e2; color: var(--error); border-radius: 8px; font-size: .875rem; }
+  [hidden] { display: none !important; }
+  @media (max-width: 760px) { .courier-grid { grid-template-columns: 1fr; gap: 16px; } .courier-heading { margin-bottom: 16px; } .courier-panel { padding: 16px; } form { margin-top: 16px; } .form-footer { padding-top: 20px; } .form-footer .primary { flex: 1; width: auto; } .save-status { flex-basis: 100%; } .save-status:has(.success-feedback) { flex-basis:auto; } }
+  @media (max-height: 740px) and (min-width: 761px) { .courier-heading { margin-bottom: 20px; } .courier-panel { padding: 20px; } form { margin-top: 20px; } .field + .field { margin-top: 12px; } .form-footer { padding-top: 20px; } }
+</style>

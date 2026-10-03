@@ -1,0 +1,93 @@
+---
+import MediaBrowser from './MediaBrowser.astro';
+---
+<section class="media-page" data-media-library>
+  <section class="media-upload-panel" aria-labelledby="media-upload-title">
+    <div class="media-upload-content">
+      <svg class="media-upload-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      <div class="media-upload-heading"><h2 id="media-upload-title">Upload media</h2><p>Upload once. Use in any campaign.</p></div>
+      <label class="primary media-upload-button">Choose files<input type="file" aria-label="Choose files to upload" data-media-files accept="image/jpeg,image/png,video/mp4" multiple /></label>
+      <div class="media-upload-limits"><span>JPEG / PNG · up to 5 MB</span><span>MP4 · up to 100 MB</span></div>
+      <div class="media-upload-state" data-upload-state hidden><span data-upload-label role="status"></span><progress data-upload-progress max="100" value="0" aria-label="Upload progress"></progress></div>
+      <p data-upload-feedback role="status" class="media-feedback"></p>
+    </div>
+  </section>
+  <section class="media-library-panel" aria-labelledby="media-library-title">
+    <h2 id="media-library-title">Your media</h2>
+    <MediaBrowser />
+  </section>
+  <dialog class="media-preview-dialog" data-media-preview aria-labelledby="media-preview-title"><header><h2 id="media-preview-title"></h2><button type="button" class="icon-button" data-preview-close aria-label="Close preview" autofocus><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg></button></header><div data-preview-content></div></dialog>
+  <dialog class="media-delete-dialog" data-media-delete aria-labelledby="media-delete-title"><h2 id="media-delete-title">Delete media?</h2><p data-delete-name></p><p data-delete-error role="status" class="media-feedback error"></p><footer><button class="secondary" type="button" data-delete-cancel autofocus>Keep media</button><button class="secondary media-delete-confirm" type="button" data-delete-confirm>Delete media</button></footer></dialog>
+</section>
+<script>
+  import { initMediaLibrary } from '../lib/media-ui';
+  initMediaLibrary();
+</script>
+<style is:global>
+  main:has(>.media-page) { display:flex; }
+  .media-page { display:grid;grid-template-columns:minmax(0,1fr);gap:24px;flex:1;min-width:0; }
+  .media-upload-panel,.media-library-panel { min-width:0;padding:24px;border:1px solid var(--line);border-radius:12px;background:var(--surface); }
+  .media-upload-panel { display:grid;place-items:center; }
+  .media-upload-content { display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:320px;text-align:center; }
+  .media-upload-icon { width:80px;height:80px;color:var(--green);margin-bottom:8px; }
+  .media-upload-heading h2,.media-library-panel>h2 { font-size:1.125rem;margin:0;font-weight:650; }
+  .media-upload-heading p { font-size:.875rem;margin:8px 0 0;color:var(--muted); }
+  .media-library-panel { display:flex;flex-direction:column;gap:16px; }
+  .media-upload-button { position:relative;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;cursor:pointer; }
+  .media-upload-button input { position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer; }
+  .media-upload-button:focus-within { outline:2px solid var(--green);outline-offset:3px; }
+  .media-upload-button:has(input:disabled) { opacity:.7;cursor:wait; }
+  .media-upload-limits { display:grid;gap:4px;color:var(--muted);font-size:.8125rem; }
+  .media-upload-state { display:grid;gap:8px;width:100%;font-size:.875rem;overflow-wrap:anywhere; }
+  .media-upload-content>.media-feedback { overflow-wrap:anywhere; }
+  .media-upload-state progress { width:100%;height:8px;accent-color:var(--green); }
+  .media-page .media-filters .media-search { max-width:none;min-width:0; }
+  .media-page .media-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .media-page .media-pagination { border-top:1px solid var(--line);padding-top:16px; }
+  @media(min-width:1101px) {
+    .media-page { grid-template-columns:minmax(280px,1fr) minmax(0,2fr); }
+    main:has(>.media-page) { min-height:calc(100dvh - 64px); }
+  }
+  @media(min-width:1101px) and (max-width:1359px) { .media-page .media-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media(min-width:1101px) and (min-height:600px) { main:has(>.media-page) { flex:none; }.media-page { min-height:calc(100dvh - 104px); } }
+  @media(min-width:761px) and (max-width:1100px) {
+    .media-upload-panel { padding:20px 24px; }
+    .media-upload-content { display:grid;grid-template-columns:56px minmax(0,1fr) 240px;max-width:none;text-align:left;column-gap:24px;row-gap:8px; }
+    .media-upload-icon { width:56px;height:56px;margin:0;grid-row:1/3; }
+    .media-upload-heading { grid-row:1/3; }
+    .media-upload-limits { display:block;grid-column:3;font-size:.75rem;text-align:center; }
+    .media-upload-limits span { display:block; }
+    .media-upload-state,.media-upload-content>.media-feedback { grid-column:2/4; }
+  }
+  @media(min-width:1101px) and (max-height:760px) {
+    .media-upload-panel,.media-library-panel { padding:20px; }
+    .media-library-panel { gap:12px; }
+    .media-page .media-thumbnail { max-height:64px; }
+    .media-page .media-browser { gap:10px; }
+    .media-page .media-card-body { padding:8px; }
+    .media-page .media-grid { gap:12px; }
+    .media-page .media-pagination { padding-top:12px; }
+  }
+  .media-preview-dialog,.media-delete-dialog,.media-picker-dialog { width:min(840px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:24px;border:1px solid var(--line);border-radius:12px;color:var(--ink);background:var(--surface); }
+  .media-preview-dialog::backdrop,.media-delete-dialog::backdrop,.media-picker-dialog::backdrop { background:rgb(32 42 38 / 40%); }
+  .media-preview-dialog header,.media-picker-heading { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px; }
+  .media-preview-dialog h2,.media-delete-dialog h2 { margin:0;font-size:1.125rem;overflow-wrap:anywhere; }
+  [data-preview-content] img,[data-preview-content] video { display:block;max-width:100%;max-height:70dvh;margin:auto; }
+  .media-delete-dialog { width:min(440px,calc(100vw - 32px)); }
+  .media-delete-dialog p { overflow-wrap:anywhere; }
+  .media-delete-dialog footer,.media-picker-footer { display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:20px; }
+  .media-delete-confirm { color:var(--error);background:var(--error-surface,#f7e7e2); }
+  @media(max-width:760px) {
+    .media-page { gap:16px; }
+    .media-upload-panel,.media-library-panel { padding:16px; }
+    .media-upload-content { display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;max-width:none;text-align:left; }
+    .media-upload-icon { width:40px;height:40px;margin:0;align-self:start; }
+    .media-upload-heading p { margin-top:4px; }
+    .media-upload-button,.media-upload-limits,.media-upload-state,.media-upload-content>.media-feedback { grid-column:1/-1; }
+    .media-upload-limits { display:flex;flex-wrap:wrap;gap:4px 12px; }
+    .media-page .media-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .media-page .media-card-actions .media-preview { width:44px;min-width:44px;height:44px;padding:0; }
+    .media-page .media-preview span { display:none; }
+    .media-preview-dialog,.media-picker-dialog { padding:16px; }
+  }
+</style>

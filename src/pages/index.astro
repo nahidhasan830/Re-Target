@@ -1,0 +1,149 @@
+---
+import AuthLayout from '../layouts/AuthLayout.astro';
+import { authenticate, createAccountSession, currentAccount, limitLogin, requireSameOrigin } from '../lib/auth';
+import { HttpError, readBody } from '../lib/http';
+import { validateLogin, type LoginErrors } from '../lib/login-validation';
+
+let phone = /^01[0-9]{9}$/.test(Astro.url.searchParams.get('phone') ?? '') ? Astro.url.searchParams.get('phone')! : '';
+let errors: LoginErrors = {};
+let message = '';
+if (Astro.request.method === 'POST') {
+  try {
+    requireSameOrigin(Astro.request);
+    if (Astro.request.headers.get('content-type')?.split(';')[0] !== 'application/x-www-form-urlencoded') {
+      throw new HttpError(415, 'Refresh the page and try again.');
+    }
+    const form = new URLSearchParams(await readBody(Astro.request));
+    phone = form.get('phone') ?? '';
+    const validated = validateLogin({ phone, password: form.get('password') ?? '' });
+    errors = validated.errors;
+    if (!validated.result.success) {
+      Astro.response.status = 400;
+    } else {
+      await limitLogin(Astro.request);
+      const input = validated.result.data;
+      const account = await authenticate(input.phone, input.password);
+      if (!account) {
+        throw new HttpError(401, 'Phone number or password is incorrect.');
+      }
+      await createAccountSession(Astro.cookies, Astro.url, account);
+      return Astro.redirect(account.role === 'admin' ? '/admin' : '/app', 303);
+    }
+  } catch (error) {
+    if (!(error instanceof HttpError)) console.error(JSON.stringify({ event: 'login_failed' }));
+    Astro.response.status = error instanceof HttpError ? error.status : 503;
+    message = error instanceof HttpError ? error.message : 'Login is temporarily unavailable. Please try again later.';
+    if (Astro.response.status === 429) Astro.response.headers.set('Retry-After', '900');
+  }
+} else {
+  const account = await currentAccount(Astro.cookies);
+  if (account) return Astro.redirect(account.role === 'admin' ? '/admin' : '/app', 302);
+}
+---
+<AuthLayout title="Log in">
+  <h1>Log in</h1>
+  {Astro.url.searchParams.get('setup') === 'complete' && <p class="intro" role="status">Your account is ready. Log in to finish setting up your business.</p>}
+  <form method="post" action="/" id="login-form">
+    {message && <p class="form-error" role="alert">{message}</p>}
+    <div class="field">
+      <label for="phone">Phone number</label>
+      <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="username" placeholder="01XXXXXXXXX" value={phone} required pattern="01[0-9]{9}" aria-invalid={errors.phone ? 'true' : undefined} aria-describedby="phone-error" />
+      <p class="field-error" id="phone-error" aria-live="polite" hidden={!errors.phone}>{errors.phone}</p>
+    </div>
+    <div class="field password-field">
+      <label for="password">Password</label>
+      <div class="password-wrap">
+        <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128" aria-invalid={errors.password ? 'true' : undefined} aria-describedby="password-error" />
+        <button type="button" id="toggle-password" aria-label="Show password" aria-controls="password" aria-pressed="false" hidden>
+          <svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 3 18 18M10.6 5.1 12 5c6.5 0 10 7 10 7a19 19 0 0 1-3.1 3.9M6.1 6.1A22 22 0 0 0 2 12s3.5 7 10 7a12 12 0 0 0 5.9-1.9M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+        </button>
+      </div>
+      <p class="field-error" id="password-error" aria-live="polite" hidden={!errors.password}>{errors.password}</p>
+    </div>
+    <button class="primary" type="submit" id="login-submit">Log in</button>
+    <p id="login-status" class="status" role="status"></p>
+  </form>
+</AuthLayout>
+<script>
+  import { validateLogin, type LoginErrors } from '../lib/login-validation';
+  const form = document.querySelector<HTMLFormElement>('#login-form')!;
+  const phone = document.querySelector<HTMLInputElement>('#phone')!;
+  const password = document.querySelector<HTMLInputElement>('#password')!;
+  const submit = document.querySelector<HTMLButtonElement>('#login-submit')!;
+  const toggle = document.querySelector<HTMLButtonElement>('#toggle-password')!;
+  const status = document.querySelector<HTMLElement>('#login-status')!;
+  form.noValidate = true;
+  toggle.hidden = false;
+  let submitting = false;
+  const fields = { phone, password };
+  function showError(name: keyof LoginErrors, error?: string) {
+    const element = document.getElementById(`${name}-error`)!;
+    element.textContent = error ?? '';
+    element.hidden = !error;
+    fields[name].setAttribute('aria-invalid', String(Boolean(error)));
+  }
+  for (const name of ['phone', 'password'] as const) {
+    fields[name].addEventListener('blur', () => {
+      showError(name, validateLogin({ phone: phone.value, password: password.value }).errors[name]);
+    });
+    fields[name].addEventListener('input', () => {
+      if (fields[name].getAttribute('aria-invalid') === 'true') {
+        showError(name, validateLogin({ phone: phone.value, password: password.value }).errors[name]);
+      }
+      const oldError = form.querySelector<HTMLElement>('.form-error');
+      if (oldError) oldError.hidden = true;
+    });
+  }
+  toggle.addEventListener('click', () => {
+    const visible = password.type === 'password';
+    password.type = visible ? 'text' : 'password';
+    toggle.setAttribute('aria-label', visible ? 'Hide password' : 'Show password');
+    toggle.setAttribute('aria-pressed', String(visible));
+  });
+  form.addEventListener('submit', (event) => {
+    if (submitting) { event.preventDefault(); return; }
+    const { result, errors } = validateLogin({ phone: phone.value, password: password.value });
+    showError('phone', errors.phone);
+    showError('password', errors.password);
+    if (!result.success) {
+      event.preventDefault();
+      (errors.phone ? phone : password).focus();
+      return;
+    }
+    phone.value = result.data.phone;
+    submitting = true;
+    submit.disabled = true;
+    submit.textContent = 'Logging in…';
+    status.textContent = 'Checking your account…';
+    form.setAttribute('aria-busy', 'true');
+  });
+  window.addEventListener('pageshow', () => {
+    submitting = false;
+    submit.disabled = false;
+    submit.textContent = 'Log in';
+    status.textContent = '';
+    form.removeAttribute('aria-busy');
+  });
+  form.querySelector<HTMLInputElement>('[aria-invalid="true"]')?.focus();
+</script>
+<style>
+  h1 { margin-bottom: 32px; }
+  .field { margin-bottom: 24px; }
+  label { display: block; margin-bottom: 8px; font-size: .9rem; font-weight: 600; }
+  input { width: 100%; height: 52px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); padding: 12px 14px; font-size: 1rem; }
+  input::placeholder { color: #69766e; }
+  input:hover:not(:disabled) { border-color: var(--muted); }
+  input[aria-invalid="true"] { border-color: var(--error); }
+  .field-error { margin: 7px 0 0; font-size: .8rem; color: var(--error); }
+  .password-field { margin-bottom: 28px; }
+  .password-wrap { position: relative; }
+  .password-wrap input { padding-right: 56px; }
+  #toggle-password { position: absolute; top: 4px; right: 4px; width: 44px; height: 44px; padding: 12px; color: var(--muted); background: transparent; border: 0; border-radius: 5px; cursor: pointer; }
+  #toggle-password svg { display: block; width: 20px; height: 20px; }
+  #toggle-password[aria-pressed="false"] .eye-off, #toggle-password[aria-pressed="true"] .eye { display: none; }
+  #toggle-password:hover:not(:disabled) { background: #eaf1e8; }
+  .form-error { color: var(--error); background: #f7e7e2; border-radius: 8px; padding: 12px 14px; margin: 0 0 24px; font-size: .9rem; }
+  .status { font-size: .8rem; color: var(--muted); margin: 8px 0 0; }
+  .status:empty { display: none; }
+</style>

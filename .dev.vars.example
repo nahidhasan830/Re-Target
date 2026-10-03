@@ -1,0 +1,28 @@
+# Use the existing production secrets; localhost accesses the shared live data.
+# Copy the production ADMIN_API_TOKEN, never generate a separate development token.
+ADMIN_API_TOKEN=replace-with-a-random-secret-at-least-32-characters
+# Salted password verifier. See README.md for configuration.
+ADMIN_PASSWORD_HASH=replace-with-a-password-hash
+
+# Use the same protected WAHA gateway and credentials as production.
+WAHA_BASE_URL=https://waha.nahidlabs.com
+WAHA_API_KEY=replace-with-the-private-waha-api-key
+CF_ACCESS_CLIENT_ID=replace-with-the-cloudflare-access-client-id
+CF_ACCESS_CLIENT_SECRET=replace-with-the-cloudflare-access-client-secret
+
+# Must match production exactly to read the shared encrypted courier records.
+COURIER_ENCRYPTION_KEY=replace-with-a-64-character-hex-key
+
+# Optional authenticated Node transport when Steadfast blocks Worker egress.
+# Leave both unset to use the direct connection. See steadfast-api-doc.md.
+# STEADFAST_TRANSPORT_URL=https://your-node-host/api/internal/steadfast-transport
+# STEADFAST_TRANSPORT_TOKEN=replace-with-the-private-transport-token
+
+# Signed campaign webhooks and private media preparation.
+WHATSAPP_WEBHOOK_SECRET=replace-with-a-random-secret-at-least-32-characters
+MEDIA_PREPARATION_URL=
+MEDIA_PREPARATION_KEY=replace-with-a-random-secret-at-least-32-characters
+
+# Private operational phone numbers, shared with production.
+ADMIN_PHONE=01XXXXXXXXX
+CAMPAIGN_TEST_NUMBERS=

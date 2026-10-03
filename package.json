@@ -1,0 +1,74 @@
+{
+  "name": "re-target",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev --background",
+    "dev:stop": "astro dev stop",
+    "dev:logs": "astro dev logs",
+    "cf:types": "wrangler types --config wrangler.jsonc",
+    "check": "npm run cf:types && astro check",
+    "build": "node scripts/patch-cache-policy.mjs && astro build",
+    "preview": "astro preview",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:production": "wrangler d1 migrations apply DB --remote --config wrangler.jsonc",
+    "deploy:check": "npm run build && wrangler deploy --dry-run",
+    "deploy": "node scripts/deploy.mjs",
+    "verify": "node scripts/verify.mjs",
+    "test:deployment": "node --test tests/deployment.test.mjs",
+    "test": "node scripts/verify.mjs",
+    "astro": "astro",
+    "waha:init": "node scripts/waha.mjs init",
+    "waha:start": "node scripts/waha.mjs start",
+    "waha:stop": "node scripts/waha.mjs stop",
+    "waha:status": "node scripts/waha.mjs status",
+    "waha:pair": "node scripts/waha.mjs pair",
+    "waha:backup": "node scripts/waha.mjs backup",
+    "waha:verify": "node scripts/waha.mjs verify",
+    "waha:cloudflare": "node scripts/waha-cloudflare.mjs setup",
+    "waha:tunnel": "node scripts/waha-cloudflare.mjs start",
+    "relay:build": "node scripts/build-steadfast-relay.mjs",
+    "relay:deploy": "npm run relay:build && vercel deploy --prod --yes --cwd infra/steadfast-transport",
+    "test:campaigns": "node --test tests/campaigns.test.mjs",
+    "media:install": "npm ci --prefix infra/media-preparation --ignore-scripts",
+    "media:start": "npm start --prefix infra/media-preparation",
+    "media:up": "node scripts/media-preparation.mjs start",
+    "media:stop": "node scripts/media-preparation.mjs stop",
+    "media:status": "node scripts/media-preparation.mjs status",
+    "media:cloudflare": "node scripts/media-preparation.mjs setup",
+    "media:verify": "node scripts/media-preparation.mjs verify",
+    "postinstall": "node scripts/patch-cache-policy.mjs",
+    "security:check": "node scripts/security-check.mjs"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^14.3.3",
+    "astro": "^7.3.5",
+    "domhandler": "^6.0.1",
+    "domutils": "^4.0.2",
+    "drizzle-orm": "^0.45.3",
+    "htmlparser2": "^12.0.0",
+    "tabulator-tables": "^6.6.1",
+    "zod": "^4.6.5"
+  },
+  "allowScripts": {
+    "esbuild": true
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/node": "^26.6.3",
+    "@types/tabulator-tables": "^6.3.6",
+    "drizzle-kit": "^0.31.11",
+    "esbuild": "^0.28.2",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.145.0"
+  },
+  "private": true,
+  "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": "^0.25.0"
+    }
+  }
+}

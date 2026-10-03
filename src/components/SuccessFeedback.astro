@@ -1,0 +1,12 @@
+---
+import { successPath } from '../lib/feedback';
+interface Props { message: string; label: string; detail?: string }
+const { message, label, detail } = Astro.props;
+const description = [message, detail].filter(Boolean).join(' ');
+---
+{message && <span class="success-feedback" title={description}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={successPath} /></svg>
+  <span class="feedback-label">{message}</span>
+  <span aria-hidden="true">{label}</span>
+  {detail && <span class="feedback-detail">{detail}</span>}
+</span>}

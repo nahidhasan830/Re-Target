@@ -1,0 +1,13 @@
+---
+import RefreshIcon from './RefreshIcon.astro';
+interface Props { base: string }
+const { base } = Astro.props;
+---
+<div class="campaign-list-actions">
+  <div class="campaign-archive-option">
+    <label class="campaign-archive-toggle"><input type="checkbox" id="show-archived" aria-describedby="archive-retention" /><span>Show archived</span></label>
+    <div class="campaign-archive-tooltip" id="archive-retention" role="tooltip">Archived campaigns and their message evidence are retained for 180 days.</div>
+  </div>
+  <button class="secondary" id="refresh-campaigns" type="button" aria-label="Refresh campaigns" title="Refresh campaigns" aria-busy="true" disabled><RefreshIcon class="campaign-refresh-icon" /><svg class="campaign-refresh-spinner" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" opacity=".2"/><path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Refresh</span></button>
+  <a class="primary" href={`${base}/campaigns/new`}>New campaign</a>
+</div>

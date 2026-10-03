@@ -1,0 +1,16 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+import SetupDashboard from '../components/SetupDashboard.astro';
+import { currentAccount } from '../lib/auth';
+import { setupProgress } from '../lib/setup-dashboard';
+const account = await currentAccount(Astro.cookies);
+if (!account) return Astro.redirect('/', 302);
+if (account.role !== 'admin') return Astro.redirect('/app', 302);
+if (Astro.request.method === 'POST') return Astro.redirect('/admin/account', 307);
+let progress = null;
+try { progress = await setupProgress(account); }
+catch { console.error(JSON.stringify({ event: 'setup_progress_failed' })); }
+---
+<DashboardLayout title="Dashboard" active="dashboard" role="admin" phone={account.phone} companyName={account.companyName}>
+  <SetupDashboard role="admin" progress={progress} />
+</DashboardLayout>

@@ -1,0 +1,157 @@
+---
+import CampaignEditor from './CampaignEditor.astro';
+import MediaPicker from './MediaPicker.astro';
+import RefreshIcon from './RefreshIcon.astro';
+import LoadingRegion from './LoadingRegion.astro';
+interface Props { base:string;id:string;view?:string;owner?:string }
+const {base,id,view='',owner=base}=Astro.props;
+---
+<section class="campaign-root" data-campaign-detail data-base={base} data-id={id} data-view={view}>
+  <p id="campaign-detail-message" role="status"></p>
+  <button class="secondary" id="retry-campaign-detail" type="button" hidden>Try again</button>
+  <LoadingRegion id="campaign-detail-loading" variant="campaign-detail" label="Loading campaign details…">
+  <div class="campaign-detail-grid" id="campaign-detail-grid" hidden>
+  <aside class="campaign-summary-panel" aria-label="Sending summary">
+  <div class="campaign-run-state" id="campaign-run-state"></div>
+  <div id="campaign-detail-actions"></div>
+  <a id="draft-review-link" class="primary" hidden>Review &amp; schedule</a>
+  <div id="sending-test-history"></div>
+  <section id="campaign-progress" hidden aria-label="Campaign progress">
+    <div class="campaign-progress-heading"><h3>Messages</h3><p id="campaign-live-status" role="status" class="muted"></p></div>
+    <dl class="campaign-results" id="campaign-results"></dl>
+    <details id="campaign-outcome-reasons" hidden><summary>Skip & failure reasons</summary><div id="campaign-reason-results"></div></details>
+  </section>
+  </aside>
+  <section id="launched-results" hidden>
+    <div class="recipient-heading"><h3 id="campaign-recipient-total">Contacts</h3><label><span class="sr-only">Filter recipient status</span><select id="recipient-status"><option value="all">All recipients</option><option value="queued">Queued</option><option value="in_progress">In progress</option><option value="fully_sent">Fully sent</option><option value="partially_sent">Partially sent</option><option value="failed">Failed</option><option value="unconfirmed">Unconfirmed</option><option value="skipped">Skipped</option><option value="cancelled">Cancelled</option></select></label><button class="secondary campaign-refresh" id="refresh-results" type="button" aria-label="Refresh campaign progress" title="Refresh campaign progress"><RefreshIcon /></button></div>
+    <LoadingRegion id="recipients-loading" variant="recipients" label="Loading recipients…"><div id="recipient-results"></div></LoadingRegion><div class="campaign-pagination" id="recipient-pagination" hidden><button class="secondary" id="recipient-previous" disabled>Previous</button><span id="recipient-page"></span><button class="secondary" id="recipient-next" disabled>Next</button></div>
+  </section>
+  </div>
+  <div id="draft-editor-slot" hidden><CampaignEditor base={base} companyName="" id={id} view={view} owner={owner} /></div>
+  <details id="campaign-tests" hidden><summary>Recent test sends</summary><div id="campaign-test-history"></div></details>
+  <section id="recovery-controls" hidden aria-labelledby="recovery-title"><div class="recovery-heading"><h3 id="recovery-title">Review message</h3><button type="button" class="secondary" id="close-recovery">Close</button></div><p id="recovery-context" class="muted"></p><form id="recovery-form"><input type="hidden" name="messageId" required /><label>What happened?<select id="recovery-action" name="resolution"><option value="sent">Confirmed sent</option><option value="unsent">Not sent — retry</option><option value="failed">Mark failed</option><option value="recover_part">Replace attachment</option></select></label><label>WhatsApp message ID<input name="gatewayId" maxlength="200" /></label><div id="recovery-attachment" hidden><button class="secondary" type="button" data-open-media-picker>Choose replacement media</button><p id="recovery-media-name" class="muted">No replacement selected</p><input type="hidden" name="assetId" /></div><label>What did you check?<textarea name="evidence" required maxlength="1000" rows="3" placeholder="What did you check, and what confirms this outcome?"></textarea></label><label class="checkbox-row"><input name="acknowledgeDuplicateRisk" type="checkbox" />I acknowledge that deliberately retrying an unconfirmed send could create a duplicate.</label><button class="secondary">Save result</button><p id="recovery-message" role="status"></p></form><MediaPicker base={base} id="recovery-picker" /></section>
+  </LoadingRegion>
+</section>
+<script>
+  import { initCampaignDetail } from '../lib/campaign-ui';
+  initCampaignDetail();
+</script>
+<style is:global>
+  #draft-review-link { display:inline-flex;align-items:center;justify-content:center;min-height:44px;text-decoration:none;margin-top:16px; }
+  #sending-test-history:not(:empty) { margin:20px 0; }
+  #sending-test-history .campaign-row { display:block;padding:12px 0;font-size:.8125rem;border:0; }
+  #sending-test-history summary { font-size:.875rem; }
+  .campaign-root .sending-empty { margin:20px; }
+  .campaign-controls { display:flex;gap:8px;flex-wrap:wrap; }
+  .campaign-control-icon svg { display:none; }
+  .campaign-header-status { color:var(--muted);font-size:.8125rem; }
+  .workspace:has([data-campaign-detail]) .header-title { display:grid;gap:2px;flex:1; }
+  .workspace:has([data-campaign-detail]) .topbar h1 { white-space:normal;overflow-wrap:anywhere; }
+  .workspace:has([data-campaign-detail]) .header-actions { flex-wrap:wrap;justify-content:flex-end; }
+  @media(max-width:760px) {
+    .workspace:has([data-campaign-detail]) .topbar { flex-wrap:wrap; }
+    .workspace:has([data-campaign-detail]) .header-actions { width:100%; }
+    .campaign-controls .campaign-control-icon { display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:0; }
+    .campaign-control-icon svg { display:block;width:20px;height:20px; }
+    .campaign-control-icon span { display:none; }
+    .workspace:has(.campaign-controls[data-compact=true]) .topbar { flex-wrap:nowrap; }
+    .workspace:has(.campaign-controls[data-compact=true]) .header-actions { width:auto; }
+    .campaign-controls[data-compact=true] { flex-wrap:nowrap; }
+    .workspace:has(.campaign-controls[data-compact=true]) .topbar h1 { white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .workspace:has(.campaign-controls[data-compact=true]) .campaign-header-status { white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  }
+  @media(min-width:1001px) and (min-height:700px) {
+    .workspace:has(#draft-editor-slot:not([hidden])) { height:100dvh; }
+    main:has(#draft-editor-slot:not([hidden])),[data-campaign-detail]:has(#draft-editor-slot:not([hidden])),#campaign-detail-loading:has(#draft-editor-slot:not([hidden])),#campaign-detail-loading[aria-busy=false]>.region-content:has(#draft-editor-slot:not([hidden])),#draft-editor-slot:not([hidden]),#draft-editor-slot>.campaign-editor { display:flex;flex-direction:column;flex:1;min-height:0; }
+    #draft-editor-slot:has(#audience-warning:not([hidden])) { min-height:min-content; }
+  }
+  .campaign-detail-grid { display:grid;grid-template-columns:minmax(280px,1fr) minmax(0,2fr);gap:24px;align-items:start; }
+  @media(min-width:761px) {
+    main:has(#campaign-detail-grid:not([hidden])),
+    [data-campaign-detail]:has(#campaign-detail-grid:not([hidden])),
+    #campaign-detail-loading:has(#campaign-detail-grid:not([hidden])),
+    #campaign-detail-loading[aria-busy=false]>.region-content:has(#campaign-detail-grid:not([hidden])) { display:flex;flex-direction:column;flex:1;min-height:0; }
+    .campaign-detail-grid { flex:1;align-items:stretch; }
+    #launched-results { display:flex;flex-direction:column; }
+    #launched-results>.loading-region { flex:1; }
+  }
+  .campaign-summary-panel,#launched-results { min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:12px; }
+  .campaign-summary-panel { padding:24px; }
+  .campaign-run-state { display:grid;gap:8px; }
+  .campaign-run-state:empty { display:none; }
+  .campaign-run-state h2 { margin:0;font-size:1.25rem; }
+  .campaign-root .campaign-run-state p { margin:0;line-height:1.6;font-size:.875rem; }
+  .campaign-run-state .run-sender { color:var(--muted);margin-top:8px; }
+  #campaign-detail-actions { margin:20px 0 24px; }
+  #campaign-detail-actions .campaign-controls { gap:8px; }
+  #campaign-detail-actions .campaign-control-icon svg { display:block;width:18px;height:18px; }
+  #campaign-detail-actions .campaign-control-icon { display:inline-flex;align-items:center;justify-content:center;gap:6px; }
+  .campaign-progress-heading { display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap; }
+  .campaign-progress-heading h3 { margin:0;font-size:.875rem; }
+  .campaign-root .campaign-progress-heading p { margin:0;font-size:.75rem; }
+  .campaign-results { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:16px 0 0; }
+  .campaign-results div { display:grid;gap:4px;min-width:0; }
+  .campaign-results dt { color:var(--muted);font-size:.8125rem; }
+  .campaign-results dd { margin:0;font-size:1.5rem;font-weight:650;font-variant-numeric:tabular-nums; }
+  #campaign-progress>details { margin-top:16px;font-size:.875rem; }
+  .campaign-reason-list { margin:8px 0 16px;display:grid;gap:6px; }
+  .campaign-reason-list div { display:flex;justify-content:space-between;gap:16px; }
+  .campaign-reason-list dt { overflow-wrap:anywhere; }
+  .campaign-reason-list dd { margin:0;font-variant-numeric:tabular-nums;font-weight:650; }
+  .campaign-reason-heading { margin:12px 0 8px;font-size:.875rem; }
+  .recipient-heading { display:flex;align-items:center;gap:8px;padding:16px 20px;border-bottom:1px solid var(--line); }
+  .recipient-heading h3 { margin:0 auto 0 0;font-size:1rem; }
+  .recipient-heading label { min-width:0; }
+  .recipient-heading select { font-size:.8125rem; }
+  .sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
+  .campaign-refresh { display:inline-flex;align-items:center;justify-content:center;min-width:44px;width:44px;height:44px;padding:0; }
+  .campaign-refresh svg { width:20px;height:20px; }
+  .recipient-result { border-bottom:1px solid var(--line);padding:10px 20px; }
+  .recipient-result:last-child { border-bottom:0; }
+  .campaign-root .recipient-result summary { display:flex;justify-content:space-between;gap:12px; }
+  .campaign-root .recipient-result summary::before { flex-shrink:0; }
+  .recipient-identity { flex:1;min-width:0;display:grid;gap:3px;overflow-wrap:anywhere;font-size:.875rem; }
+  .recipient-phone { white-space:nowrap;font-variant-numeric:tabular-nums; }
+  .recipient-identity>.recipient-phone:not(:first-child) { color:var(--muted);font-size:.8125rem;font-weight:400; }
+  .recipient-result small { color:var(--muted);font-weight:400; }
+  .recipient-delivery { font-size:.75rem;padding:4px 8px;border-radius:6px;background:var(--paper);white-space:nowrap; }
+  .recipient-delivery[data-state=fully_sent] { color:var(--green);background:var(--green-soft); }
+  .recipient-delivery:is([data-state=failed],[data-state=unconfirmed]) { color:var(--error); }
+  .recipient-result ol { padding-left:24px;margin:8px 0; }
+  .recipient-result li { padding:8px 0;overflow-wrap:anywhere;font-size:.875rem; }
+  .recipient-result li pre { margin:8px 0; }
+  #recipient-pagination { margin:0;padding:12px 20px;border-top:1px solid var(--line);font-size:.8125rem; }
+  #recovery-controls { margin-top:24px;padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface); }
+  .recovery-heading { display:flex;align-items:center;justify-content:space-between;gap:12px; }
+  .recovery-heading h3 { margin:0;font-size:1rem; }
+  #recovery-form { display:grid;gap:12px;max-width:600px; }
+  #recovery-form button { justify-self:start; }
+  #draft-editor-slot .back-link { display:none; }
+  #campaign-detail-message:empty,#draft-editor-slot #composer-message:empty { display:none; }
+  @media(max-width:1000px) {
+    .campaign-detail-grid { grid-template-columns:minmax(240px,1fr) minmax(0,2fr);gap:16px; }
+    .campaign-summary-panel { padding:20px; }
+    .recipient-heading { flex-wrap:wrap;padding:12px 16px; }
+    .recipient-heading h3 { flex-basis:100%;margin-bottom:4px; }
+    .recipient-heading label { flex:1; }
+  }
+  @media(max-width:760px) {
+    .campaign-detail-grid { grid-template-columns:minmax(0,1fr);gap:16px; }
+    .campaign-summary-panel { padding:16px; }
+    #campaign-detail-actions { margin:16px 0; }
+    #campaign-detail-actions .campaign-control-icon { padding:8px 12px; }
+    #campaign-detail-actions .campaign-control-icon span { display:block; }
+    .campaign-results { grid-template-columns:repeat(3,minmax(0,1fr));gap:12px; }
+    .campaign-results dd { font-size:1.25rem; }
+    .recipient-result { padding:10px 16px; }
+    .campaign-root .recipient-result summary { display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:8px; }
+    .recipient-heading h3 { flex-basis:auto;margin:0 auto 0 0; }
+    .recipient-heading label { flex:0 1 140px; }
+    .recipient-delivery { white-space:normal;max-width:90px; }
+    #recovery-controls { padding:16px; }
+  }
+  @media(max-width:380px) {
+    .recipient-heading h3 { flex-basis:100%;margin-bottom:4px; }
+    .recipient-heading label { flex:1; }
+  }
+</style>

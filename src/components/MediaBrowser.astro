@@ -1,0 +1,62 @@
+---
+import RefreshIcon from './RefreshIcon.astro';
+interface Props { picker?: boolean; idPrefix?: string }
+const { picker = false, idPrefix } = Astro.props;
+const prefix = idPrefix ?? (picker ? 'picker' : 'library');
+---
+<div class="media-browser" data-media-browser data-picker={String(picker)}>
+  <form class="media-filters" role="search">
+    <label class="media-search" for={`${prefix}-search`}>Search media<input id={`${prefix}-search`} name="search" type="search" placeholder="Search by filename" maxlength="120" autofocus={picker} /></label>
+    <label for={`${prefix}-kind`}>Type<select id={`${prefix}-kind`} name="kind"><option value="all">All media</option><option value="image">Images</option><option value="video">Videos</option></select></label>
+    <button class="secondary media-refresh" type="button" data-media-refresh aria-label="Refresh media" title="Refresh media"><RefreshIcon /></button>
+  </form>
+  <p class="media-feedback" data-media-feedback role="status"></p>
+  <div class="media-grid" data-media-grid aria-label={picker ? 'Choose media' : 'Media files'}></div>
+  <div class="media-empty" data-media-empty hidden><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="1.5" stroke="currentColor" stroke-width="1.5"/><path d="m3 17 5-5 4 4 4-6 5 7" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg><h2 data-empty-title>No media yet</h2><p data-empty-copy>Upload images and videos to use in your campaigns.</p></div>
+  <footer class="media-pagination" data-media-pagination><span data-media-count></span><div><button class="secondary" type="button" data-media-previous>Previous</button><button class="secondary" type="button" data-media-next>Next</button></div></footer>
+</div>
+<style is:global>
+  .media-browser { display:flex;flex-direction:column;gap:12px;min-width:0;flex:1; }
+  .media-browser [hidden],.media-page [hidden] { display:none!important; }
+  .media-filters { display:flex;align-items:end;gap:12px; }
+  .media-filters label { display:grid;gap:4px;font-size:.8125rem;font-weight:550; }
+  .media-filters .media-search { flex:1;max-width:480px; }
+  .media-filters input,.media-filters select { min-width:0;width:100%;min-height:44px;border:1px solid var(--line);border-radius:8px;padding:8px 12px;color:var(--ink);background:var(--surface);caret-color:var(--green); }
+  .media-filters .media-refresh { margin-left:auto;padding:0;width:44px;min-width:44px;display:grid;place-items:center; }
+  .media-refresh svg { width:20px;height:20px; }
+  .media-refresh[aria-busy=true] svg { animation:media-refresh-spin .8s linear infinite; }
+  @keyframes media-refresh-spin { to { transform:rotate(360deg); } }
+  @media(prefers-reduced-motion:reduce) { .media-refresh[aria-busy=true] svg { animation:none; } }
+  .media-feedback { margin:0;font-size:.875rem;color:var(--muted); }
+  .media-feedback:empty { display:none; }
+  .media-feedback.error { color:var(--error); }
+  .media-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-content:start; }
+  .media-card { min-width:0;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden; }
+  .media-card[data-selected=true] { border-color:var(--green);background:var(--green-soft); }
+  .media-thumbnail { display:block;position:relative;width:100%;padding:0;border:0;border-bottom:1px solid var(--line);background:#eef0e8;color:var(--muted);cursor:pointer;aspect-ratio:16/9;overflow:hidden;max-height:144px; }
+  .media-thumbnail img,.media-thumbnail video { display:block;width:100%;height:100%;object-fit:contain; }
+  .media-thumbnail>span { display:grid;place-items:center;height:100%;font-size:.875rem; }
+  .media-video-mark { position:absolute;left:8px;bottom:8px;display:flex;align-items:center;gap:4px;padding:2px 7px;border-radius:4px;background:var(--surface);color:var(--ink);font-size:.75rem; }
+  .media-video-mark svg { width:14px;height:14px; }
+  .media-card-body { padding:10px; }
+  .media-card h3 { margin:0;font-size:.875rem;font-weight:600;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  .media-card p { margin:2px 0;color:var(--muted);font-size:.75rem;font-variant-numeric:tabular-nums;overflow:hidden;white-space:nowrap;text-overflow:ellipsis; }
+  .media-card-actions { display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px; }
+  .media-card-actions .secondary { padding:8px 12px; }
+  .media-preview { display:inline-flex;align-items:center;justify-content:center;gap:8px; }
+  .media-preview svg { width:18px;height:18px;flex-shrink:0; }
+  .media-card-actions .media-delete { min-width:44px;min-height:44px;padding:0;display:grid;place-items:center;color:var(--error); }
+  .media-delete svg { width:18px;height:18px; }
+  .media-in-use { color:var(--muted);font-size:.75rem; }
+  .media-select { width:100%; }
+  .media-select[aria-pressed=true] { color:var(--green);border-color:var(--green);background:var(--green-soft); }
+  .media-empty { display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;min-height:280px;padding:32px 16px;text-align:center; }
+  .media-empty svg { width:48px;height:48px;color:var(--muted);margin-bottom:16px; }
+  .media-empty h2 { margin:0 0 8px;font-size:1.125rem; }
+  .media-empty p { margin:0;max-width:38ch;color:var(--muted);font-size:.875rem; }
+  .media-pagination { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;padding-top:8px;font-size:.8125rem;color:var(--muted);font-variant-numeric:tabular-nums; }
+  .media-pagination>div { display:flex;gap:8px; }
+  .media-browser[data-picker=true] .media-grid { grid-template-columns:repeat(3,minmax(0,1fr));gap:12px; }
+  @media(max-width:1100px) { .media-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  @media(max-width:760px) { .media-grid,.media-browser[data-picker=true] .media-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:12px; }.media-filters { flex-wrap:wrap;gap:8px; }.media-filters .media-search { flex:1 1 100%;max-width:none; }.media-filters label:not(.media-search) { flex:1; }.media-card-body { padding:10px; }.media-pagination { flex-wrap:wrap; }.media-pagination>div { margin-left:auto; }.media-card-actions .secondary { font-size:.8125rem;padding:8px; } }
+</style>

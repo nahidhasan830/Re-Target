@@ -1,0 +1,15 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import LeadsSyncButton from '../../components/LeadsSyncButton.astro';
+import LeadsHeader from '../../components/LeadsHeader.astro';
+import Leads from '../../components/Leads.astro';
+import { currentAccount } from '../../lib/auth';
+const account = await currentAccount(Astro.cookies);
+if (!account) return Astro.redirect('/', 302);
+if (account.role !== 'user') return Astro.redirect('/admin/leads', 302);
+---
+<DashboardLayout title="Leads" active="leads" role="user" phone={account.phone} companyName={account.companyName}>
+  <LeadsHeader slot="header-meta" />
+  <LeadsSyncButton slot="header-actions" />
+  <Leads courierUrl="/app/courier" />
+</DashboardLayout>

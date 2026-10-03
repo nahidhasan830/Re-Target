@@ -1,0 +1,16 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import CourierSettings from '../../components/CourierSettings.astro';
+import { currentAccount } from '../../lib/auth';
+import { courierSettings } from '../../lib/courier-settings';
+const account = await currentAccount(Astro.cookies);
+if (!account) return Astro.redirect('/', 302);
+if (account.role !== 'user') return Astro.redirect('/admin/courier', 302);
+const state = await courierSettings(Astro.request, account);
+if (state.verified) return Astro.redirect(`/app/courier?connected=${state.verified}`, 303);
+if (state.saved) return Astro.redirect(`/app/courier?saved=${state.saved}`, 303);
+Astro.response.status = state.status;
+---
+<DashboardLayout title="Courier" active="courier" role="user" phone={account.phone} companyName={account.companyName}>
+  <CourierSettings state={state} action="/app/courier" saved={Astro.url.searchParams.get('saved')} />
+</DashboardLayout>

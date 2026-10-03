@@ -1,0 +1,12 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import MediaLibrary from '../../components/MediaLibrary.astro';
+import { currentAccount } from '../../lib/auth';
+const account = await currentAccount(Astro.cookies);
+if (!account) return Astro.redirect('/');
+const base = account.role === 'admin' ? '/admin' : '/app';
+if (base !== '/app') return Astro.redirect(`${base}/media`);
+---
+<DashboardLayout title="Media" active="media" phone={account.phone} role={account.role} companyName={account.companyName}>
+  <MediaLibrary />
+</DashboardLayout>

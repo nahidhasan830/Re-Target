@@ -1,0 +1,6 @@
+<style is:global>
+  :root body :is(button, input, select, textarea):disabled { cursor: not-allowed; }
+  :root body button:disabled[aria-busy="true"],
+  :root body form[aria-busy="true"] button[type="submit"]:disabled { cursor: wait; }
+  :root body label:has(> input:disabled) { cursor: not-allowed; }
+</style>

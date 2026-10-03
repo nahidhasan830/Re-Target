@@ -1,0 +1,32 @@
+---
+import WhatsAppPairing from './WhatsAppPairing.astro';
+import TestDestinations from './TestDestinations.astro';
+interface Props { phone?: string }
+const { phone = '' } = Astro.props;
+---
+<div class="whatsapp-settings">
+  <WhatsAppPairing phone={phone} />
+  <TestDestinations />
+</div>
+<style>
+  :global(main:has(.whatsapp-settings)) { display:flex; }
+  .whatsapp-settings { width:100%; display:grid;grid-template-columns:1fr;gap:20px;align-content:start;align-items:stretch; }
+  .whatsapp-settings :global(.pairing) { display:flex;flex-direction:column;min-width:0; }
+  .whatsapp-settings :global(.test-destinations) { align-self:start; }
+  .whatsapp-settings :global(.pairing-header) { min-height:104px; }
+  .whatsapp-settings :global(.pairing-body) { grid-template-columns:1fr;flex:1; }
+  .whatsapp-settings :global(.pairing-display) { border-right:0;border-bottom:1px solid var(--line);min-height:260px; }
+  .whatsapp-settings :global(.pairing-body[data-connected="true"] .pairing-display) { min-height:220px; }
+  .whatsapp-settings :global(.pairing-empty) { gap:20px; }
+  .whatsapp-settings :global(.pairing-empty svg) { width:56px;height:56px; }
+  .whatsapp-settings :global(.connection-actions) { padding:20px 24px; }
+  @media(min-width:1100px) { .whatsapp-settings { grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;min-height:calc(100svh - 104px);align-content:stretch; }.whatsapp-settings :global(.pairing) { align-self:start;min-height:calc(100svh - 104px); } }
+  @media(max-width:760px) {
+    .whatsapp-settings { gap:16px; }
+    .whatsapp-settings :global(.pairing-header) { min-height:auto;flex-direction:row;padding:20px; }
+    .whatsapp-settings :global(.pairing-body[data-connected="true"]) { display:none; }
+    .whatsapp-settings :global(.connection-actions) { padding:16px 20px; }
+    .whatsapp-settings :global(.pairing-empty) { gap:12px; }
+    .whatsapp-settings :global(.pairing-empty svg) { width:40px;height:40px; }
+  }
+</style>

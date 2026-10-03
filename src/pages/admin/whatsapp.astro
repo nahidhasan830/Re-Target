@@ -1,0 +1,10 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import WhatsAppSettings from '../../components/WhatsAppSettings.astro';
+import { currentAdmin } from '../../lib/auth';
+const admin = await currentAdmin(Astro.cookies);
+if (!admin) return Astro.redirect('/', 302);
+---
+<DashboardLayout title="WhatsApp" active="whatsapp" phone={admin.phone}>
+  <WhatsAppSettings />
+</DashboardLayout>

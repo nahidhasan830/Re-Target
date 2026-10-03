@@ -1,0 +1,109 @@
+---
+interface Props {
+  variant: 'dashboard' | 'leads' | 'campaigns' | 'users' | 'account' | 'courier' | 'whatsapp' | 'campaign-editor' | 'campaign-detail' | 'auth' | 'table-rows' | 'audience' | 'recipients' | 'history' | 'connection' | 'destinations';
+}
+const { variant } = Astro.props;
+const rowVariants = ['leads', 'table-rows', 'audience', 'recipients', 'history'];
+const settingsVariants = ['account', 'courier', 'whatsapp', 'connection', 'destinations', 'auth'];
+const rows = Array.from({length: variant === 'history' ? 3 : 6});
+const panels = Array.from({length: ['account', 'courier', 'whatsapp'].includes(variant) ? 2 : 1});
+---
+<div class="loading-skeleton" data-skeleton={variant} aria-hidden="true">
+  {variant === 'dashboard' && <>
+    <div class="sk-identity"><span class="sk sk-heading"></span><span class="sk sk-name"></span></div>
+    <div class="sk-dashboard"><div class="sk-panel">{rows.map(() => <div class="sk-row"><div class="sk-identity"><span class="sk sk-name"></span><span class="sk sk-caption"></span></div><span class="sk sk-badge"></span></div>)}</div><div class="sk-panel sk-settings"><span class="sk sk-heading"></span><span class="sk sk-name"></span><span class="sk sk-button"></span></div></div>
+  </>}
+  {rowVariants.includes(variant) && <>
+    {variant === 'leads' && <div class="sk-toolbar"><span class="sk sk-search"></span><span class="sk sk-button"></span><span class="sk sk-button"></span></div>}
+    <div class:list={['sk-rows', {'sk-panel': variant === 'leads'}]}>
+      {variant === 'leads' && <div class="sk-row sk-table-header"><span class="sk sk-label"></span><span class="sk sk-label"></span><span class="sk sk-label"></span><span class="sk sk-label sk-desktop"></span><span class="sk sk-label sk-desktop"></span></div>}
+      {rows.map(() => <div class="sk-row"><div class="sk-identity"><span class="sk sk-name"></span>{!['table-rows','leads'].includes(variant) && <span class="sk sk-caption"></span>}</div><span class="sk sk-value"></span><span class="sk sk-value"></span>{['leads','table-rows'].includes(variant) && <><span class="sk sk-value sk-desktop"></span><span class="sk sk-value sk-desktop"></span></>}</div>)}
+    </div>
+  </>}
+  {variant === 'campaigns' && <>
+    <span class="sk sk-label"></span>
+    <div class="sk-campaign-grid">{rows.map(() => <div class="sk-campaign-card"><div class="sk-toolbar"><span class="sk sk-name"></span><span class="sk sk-badge"></span></div><div class="sk-identity"><span class="sk sk-caption"></span><span class="sk sk-name"></span></div><div class="sk-toolbar"><span class="sk sk-button"></span><span class="sk sk-button"></span></div></div>)}</div>
+  </>}
+  {settingsVariants.includes(variant) && <div class="sk-settings-grid">
+    {panels.map((_, index) => <div class:list={['sk-settings', {'sk-panel': !['connection','destinations','auth'].includes(variant)}]}>
+      {!['connection','destinations'].includes(variant) && <div class="sk-toolbar"><span class="sk sk-heading"></span>{variant !== 'auth' && <span class="sk sk-badge"></span>}</div>}
+      {(variant === 'connection' || variant === 'whatsapp' && index === 0) && <div class="sk-connection"><span class="sk sk-qr"></span><span class="sk sk-caption"></span></div>}
+      <div class="sk-fields">
+        {Array.from({length: variant === 'destinations' || variant === 'whatsapp' && index === 1 ? 1 : variant === 'account' && index === 0 ? 1 : variant === 'account' ? 3 : 2}, () => <div class="sk-field-group"><span class="sk sk-label"></span><span class:list={['sk sk-field', {'sk-textarea': variant === 'destinations' || variant === 'whatsapp' && index === 1}]}></span></div>)}
+      </div>
+      <span class="sk sk-button sk-action"></span>
+    </div>)}
+  </div>}
+  {variant === 'users' && <div class="sk-users-grid">
+    <div class="sk-panel sk-invite"><span class="sk sk-invite-icon"></span><span class="sk sk-heading"></span><div class="sk-field-group"><span class="sk sk-label"></span><span class="sk sk-field"></span></div><span class="sk sk-button"></span></div>
+    <div class="sk-panel"><div class="sk-toolbar sk-panel-heading"><span class="sk sk-heading"></span><span class="sk sk-button"></span></div>{rows.map(() => <div class="sk-row"><div class="sk-identity"><span class="sk sk-name"></span><span class="sk sk-caption"></span></div><span class="sk sk-badge"></span><span class="sk sk-value"></span></div>)}</div>
+  </div>}
+  {variant === 'campaign-editor' && <>
+    <div class="sk-editor-heading"><div class="sk-toolbar sk-steps"><span class="sk sk-button"></span><span class="sk sk-button"></span><span class="sk sk-button"></span></div></div>
+    <div class="sk-editor-layout"><div class="sk-panel sk-editor-table"><div class="sk-toolbar sk-panel-heading"><span class="sk sk-name"></span><span class="sk sk-badge"></span></div><div class="sk-rows">{rows.map(() => <div class="sk-row"><span class="sk sk-name"></span>{Array.from({length:4}, () => <span class="sk sk-value"></span>)}</div>)}</div></div><div class="sk-editor-filters"><div class="sk-field-group"><span class="sk sk-label"></span><span class="sk sk-field"></span></div><span class="sk sk-heading"></span><div class="sk-fields">{Array.from({length:4}, () => <div class="sk-field-group"><span class="sk sk-label"></span><span class="sk sk-field"></span></div>)}</div></div></div>
+    <div class="sk-toolbar sk-editor-actions"><span class="sk sk-button"></span><span class="sk sk-button"></span></div>
+  </>}
+  {variant === 'campaign-detail' && <>
+    <span class="sk sk-label"></span><div class="sk-toolbar"><div class="sk-identity"><span class="sk sk-heading"></span><span class="sk sk-caption"></span></div><span class="sk sk-button"></span></div>
+    <span class="sk sk-field"></span><div class="sk-toolbar sk-metrics">{Array.from({length:5}, () => <span class="sk sk-name"></span>)}</div>
+    <div class="sk-toolbar"><span class="sk sk-heading"></span><span class="sk sk-button"></span></div>
+    <div class="sk-rows">{rows.map(() => <div class="sk-row"><div class="sk-identity"><span class="sk sk-name"></span><span class="sk sk-caption"></span></div><span class="sk sk-badge"></span><span class="sk sk-value"></span></div>)}</div>
+  </>}
+</div>
+<style is:global>
+  .loading-skeleton { width:100%;min-width:0;display:flex;flex-direction:column;gap:16px; }
+  .loading-skeleton .sk { display:block;flex-shrink:0;max-width:100%;background:var(--line);border-radius:6px;animation:loading-skeleton-pulse 1.6s ease-in-out infinite; }
+  .sk-campaign-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:16px; }
+  .sk-campaign-card { display:grid;gap:20px;padding:20px;min-width:0;border:1px solid var(--line);border-radius:12px;background:var(--surface); }
+  .sk-campaign-card .sk-name { width:65%; }.sk-campaign-card .sk-button { width:72px; }
+  .sk-heading { width:180px;height:20px; }.sk-label { width:96px;height:12px; }.sk-name { width:70%;height:16px; }.sk-caption { width:50%;height:12px; }.sk-value { width:65%;height:12px; }.sk-badge { width:72px;height:24px; }.sk-button { width:112px;height:44px; }.sk-field { width:100%;height:48px; }.sk-search { width:min(360px,50%);height:44px; }
+  .sk-toolbar { display:flex;align-items:center;justify-content:space-between;gap:16px;min-width:0; }.sk-identity { display:grid;gap:10px;min-width:0; }
+  .loading-skeleton .sk-toolbar>.sk { flex-shrink:1;min-width:0; }
+  .sk-panel { border:1px solid var(--line);border-radius:16px;background:var(--surface,#fff);overflow:hidden;min-width:0; }
+  .sk-rows { min-width:0;overflow:hidden; }.sk-row { display:grid;grid-template-columns:minmax(0,1fr) minmax(70px,.4fr) minmax(90px,.5fr);align-items:center;gap:20px;min-height:64px;padding:14px 20px;border-bottom:1px solid var(--line); }
+  [data-skeleton=leads] .sk-rows { height:max(260px,calc(100svh - 168px)); }
+  [data-skeleton=leads] .sk-row,[data-skeleton=table-rows] .sk-row { grid-template-columns:minmax(0,1.4fr) minmax(80px,1fr) repeat(3,minmax(60px,.7fr));min-height:52px;padding-block:10px; }
+  .sk-table-header { background:var(--paper); }.sk-table-header .sk { width:70%; }
+  .sk-settings-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:stretch; }
+  .sk-settings { display:flex;flex-direction:column;gap:24px;min-width:0;padding:24px; }.sk-fields { display:grid;gap:20px; }.sk-field-group { display:grid;gap:8px; }.sk-textarea { height:220px; }.sk-action { margin-top:auto; }
+  [data-skeleton=connection] .sk-settings-grid,[data-skeleton=destinations] .sk-settings-grid,[data-skeleton=auth] .sk-settings-grid { grid-template-columns:1fr; }
+  [data-skeleton=connection] .sk-settings,[data-skeleton=destinations] .sk-settings,[data-skeleton=auth] .sk-settings { padding:0; }
+  [data-skeleton=auth] .sk-heading { width:140px;height:42px; }
+  .sk-connection { display:grid;justify-items:center;gap:16px;padding:12px; }.loading-skeleton .sk-qr { width:180px;height:180px;border-radius:12px; }.sk-connection .sk-caption { width:120px; }
+  .sk-dashboard { display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,1fr);gap:24px;align-items:start; }
+  .sk-users-grid { display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:24px; }.sk-invite { display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:24px; }.sk-invite .sk-field-group { width:100%; }.loading-skeleton .sk-invite-icon { width:80px;height:80px;border-radius:12px; }.sk-panel-heading { padding:20px; }
+  .sk-editor-heading { display:flex;justify-content:center;align-items:center; }
+  .sk-editor-heading .sk-field-group { max-width:440px; }
+  .sk-editor-layout { display:grid;grid-template-columns:340px minmax(0,1fr);gap:20px;flex:1;min-height:0; }
+  .sk-editor-table { grid-column:2;grid-row:1; }
+  .sk-editor-filters { grid-column:1;grid-row:1; }
+  .sk-editor-table .sk-row { grid-template-columns:minmax(0,1.4fr) repeat(4,minmax(0,1fr));min-height:52px; }
+  .sk-editor-filters { display:grid;align-content:start;gap:20px; }
+  .sk-editor-filters .sk-fields { grid-template-columns:1fr;gap:12px; }
+  .sk-editor-filters .sk-field-group:first-child { grid-column:1 / -1; }
+  .sk-editor-heading .sk-steps { border:0;padding:0;justify-content:space-between; }
+  #page-loading-content:has(>[data-skeleton=campaign-editor]) { height:100%; }
+  [data-skeleton=campaign-editor] { min-height:calc(100svh - 104px); }
+  .sk-campaign-name { max-width:560px; }.sk-steps { justify-content:flex-start;border-bottom:1px solid var(--line);padding-bottom:16px; }.sk-filters .sk-field { flex:1;min-width:0; }.sk-editor-actions { justify-content:flex-end; }.sk-metrics { flex-wrap:wrap;padding-block:12px;border-bottom:1px solid var(--line); }.sk-metrics .sk-name { width:140px; }
+  [data-skeleton=table-rows] { gap:0; }[data-skeleton=history] .sk-row { grid-template-columns:1fr; }[data-skeleton=history] .sk-row>.sk { display:none; }
+  @keyframes loading-skeleton-pulse { 50% { opacity:.45; } }
+  @media(prefers-reduced-motion:reduce) { .loading-skeleton .sk { animation:none; } }
+  @media(min-width:1101px) and (min-height:600px) { [data-skeleton=users] .sk-users-grid,[data-skeleton=whatsapp] .sk-settings-grid { min-height:calc(100svh - 104px); } }
+  @media(max-width:760px) {
+    .sk-editor-heading,.sk-editor-layout { grid-template-columns:1fr;gap:12px; }
+    .sk-editor-heading .sk-field-group { max-width:none; }
+    .sk-editor-filters { display:grid;grid-column:1;grid-row:1; }
+    .sk-editor-table { grid-column:1;grid-row:2; }
+    .sk-editor-table .sk-row { grid-template-columns:minmax(0,1fr) minmax(0,.7fr); }
+    .sk-editor-table .sk-row>.sk:last-child { grid-column:auto; }
+    .sk-editor-table .sk-row>.sk:nth-child(n+3) { display:none; }
+    [data-skeleton=campaign-editor] { min-height:calc(100svh - 104px); }
+    .sk-dashboard { grid-template-columns:1fr;gap:16px; }.sk-dashboard>.sk-settings { grid-row:1; }
+    .sk-settings-grid,.sk-users-grid { grid-template-columns:1fr;gap:16px; }.sk-settings { padding:20px;gap:20px; }.sk-row { gap:12px;padding-inline:14px;grid-template-columns:minmax(0,1fr) 72px; }.sk-row>.sk:last-child { grid-column:1 / -1; }.sk-row .sk-desktop { display:none; }
+    [data-skeleton=leads] .sk-row,[data-skeleton=table-rows] .sk-row { grid-template-columns:minmax(0,1.2fr) minmax(70px,1fr) 48px;gap:12px; }[data-skeleton=leads] .sk-row>.sk:nth-child(3),[data-skeleton=table-rows] .sk-row>.sk:nth-child(3) { grid-column:auto; }
+    [data-skeleton=account] .sk-settings:nth-child(2) { display:none; }.sk-toolbar { gap:12px; }.sk-toolbar .sk-heading { width:140px; }.sk-filters { display:grid;grid-template-columns:1fr 1fr; }.sk-steps .sk-button { width:26%; }.sk-connection { display:none; }.sk-invite { gap:16px; }.loading-skeleton .sk-invite-icon { width:56px;height:56px; }
+    .sk-invite { display:grid;grid-template-columns:minmax(0,1fr) auto;justify-items:center; }.sk-invite>.sk-invite-icon,.sk-invite>.sk-heading { grid-column:1 / -1; }.sk-invite>.sk-button { width:80px;align-self:end; }
+    [data-skeleton=users] .sk-users-grid>.sk-panel:last-child { height:max(220px,calc(100svh - 356px)); }[data-skeleton=users] .sk-row>.sk-identity { grid-row:1 / 3; }[data-skeleton=users] .sk-row>.sk:last-child { grid-column:2; }
+    [data-skeleton=campaign-detail] .sk-rows { max-height:max(200px,calc(100svh - 408px)); }
+  }
+</style>

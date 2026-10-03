@@ -1,0 +1,238 @@
+---
+import LoadingRegion from './LoadingRegion.astro';
+interface Props { phone?: string }
+const { phone = '' } = Astro.props;
+---
+<section class="pairing" aria-labelledby="connection-title">
+  <div class="pairing-header"><div><h2 id="connection-title">Connection</h2><p id="whatsapp-phone" hidden></p></div><span class="connection" id="connection-state">Checking…</span></div>
+  <LoadingRegion id="connection-loading" variant="connection" label="Checking WhatsApp connection…">
+  <div class="pairing-body">
+    <div class="pairing-display">
+      <div id="qr-panel" hidden><div class="qr-frame"><img id="whatsapp-qr" alt="Scan this QR code to connect your WhatsApp" width="280" height="280" /></div><p class="refresh-line">Next refresh in <span id="qr-countdown">5</span>s</p></div>
+      <div id="code-panel" hidden><p class="code-label">Your pairing code</p><output id="pairing-code" aria-label="WhatsApp pairing code"></output><p class="refresh-line">Request a new code in <span id="code-countdown">120</span>s</p></div>
+      <div id="pairing-empty" class="pairing-empty"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="12" y="4" width="24" height="40" rx="5" stroke="currentColor" stroke-width="2"/><path d="M20 10h8M21 37h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m18 24 4 4 8-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="pairing-empty-label">Your connection appears here</span></div>
+    </div>
+    <div class="pairing-instructions">
+      <h3>Link your WhatsApp</h3>
+      <div class="pairing-methods" role="group" aria-label="Connection method"><button type="button" id="method-qr" aria-pressed="true">Scan QR code</button><button type="button" id="method-code" aria-pressed="false">Use pairing code</button></div>
+      <div id="qr-instructions"><details class="linking-help" open><summary>How to link<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg></summary><ol><li>Open WhatsApp on your phone.</li><li>Go to <strong>Linked devices</strong> and tap <strong>Link a device</strong>.</li><li>Scan the QR code from this screen.</li></ol></details><button class="primary" id="connect-whatsapp" type="button" disabled>Checking WhatsApp…</button></div>
+      <form id="pairing-code-form" hidden><label for="pairing-phone">Business WhatsApp number</label><input id="pairing-phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="01XXXXXXXXX" value={phone} required pattern="01[0-9]{9}" maxlength="11" /><details class="linking-help" open><summary>How to link<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg></summary><ol><li>In WhatsApp, open <strong>Linked devices</strong>.</li><li>Tap <strong>Link a device</strong>, then <strong>Link with phone number instead</strong>.</li><li>Enter the code shown here.</li></ol></details><button class="primary" id="request-code" type="submit" disabled>Get pairing code</button></form>
+      <noscript><p>Enable JavaScript to connect WhatsApp.</p></noscript>
+    </div>
+  </div>
+  </LoadingRegion>
+  <p id="whatsapp-error" class="form-error" role="alert" hidden></p>
+  <div class="connection-actions" id="connection-actions" hidden><button class="secondary" id="disconnect-whatsapp" type="button">Disconnect WhatsApp</button></div>
+  <p class="connection-announcement" id="whatsapp-status" role="status"></p>
+</section>
+<script>
+  import type { WhatsAppState } from '../lib/waha';
+  import { localPhoneInput } from '../lib/account-validation';
+  import { setRegionLoading } from '../lib/loading-region';
+  import { setButtonBusy } from '../lib/control-state';
+  const badge = document.querySelector<HTMLElement>('#connection-state')!;
+  const connectedPhone = document.querySelector<HTMLElement>('#whatsapp-phone')!;
+  const panel = document.querySelector<HTMLElement>('#qr-panel')!;
+  const image = document.querySelector<HTMLImageElement>('#whatsapp-qr')!;
+  const countdown = document.querySelector<HTMLElement>('#qr-countdown')!;
+  const button = document.querySelector<HTMLButtonElement>('#connect-whatsapp')!;
+  const error = document.querySelector<HTMLElement>('#whatsapp-error')!;
+  const empty = document.querySelector<HTMLElement>('#pairing-empty')!;
+  const emptyLabel = document.querySelector<HTMLElement>('#pairing-empty-label')!;
+  const body = document.querySelector<HTMLElement>('.pairing-body')!;
+  const announcement = document.querySelector<HTMLElement>('#whatsapp-status')!;
+  const qrMethod = document.querySelector<HTMLButtonElement>('#method-qr')!;
+  const codeMethod = document.querySelector<HTMLButtonElement>('#method-code')!;
+  const qrInstructions = document.querySelector<HTMLElement>('#qr-instructions')!;
+  const codeForm = document.querySelector<HTMLFormElement>('#pairing-code-form')!;
+  const codePhone = document.querySelector<HTMLInputElement>('#pairing-phone')!;
+  const codeButton = document.querySelector<HTMLButtonElement>('#request-code')!;
+  const codePanel = document.querySelector<HTMLElement>('#code-panel')!;
+  const codeOutput = document.querySelector<HTMLOutputElement>('#pairing-code')!;
+  const codeCountdown = document.querySelector<HTMLElement>('#code-countdown')!;
+  const actions = document.querySelector<HTMLElement>('#connection-actions')!;
+  const disconnect = document.querySelector<HTMLButtonElement>('#disconnect-whatsapp')!;
+  const compact = matchMedia('(max-width: 760px)');
+  const linkingHelp = document.querySelectorAll<HTMLDetailsElement>('.linking-help');
+  linkingHelp.forEach((help) => { help.open = !compact.matches; });
+  compact.addEventListener('change', () => { if (!compact.matches) linkingHelp.forEach((help) => { help.open = true; }); });
+  let busy = false;
+  let state = '';
+  let current: WhatsAppState | undefined;
+  let method = matchMedia('(max-width: 600px)').matches ? 'code' : 'qr';
+  let nextRefresh = 0;
+  let codeUntil = 0;
+  let timer: ReturnType<typeof setInterval> | undefined;
+  let controller: AbortController | undefined;
+  codeForm.noValidate = true;
+  function hideQR() { panel.hidden = true; image.removeAttribute('src'); }
+  function showError(message: string) { error.textContent = message; error.hidden = false; }
+  function setBusy(value: boolean) { busy = value; qrMethod.disabled = value; codeMethod.disabled = value; }
+  function updateMethod() {
+    qrMethod.setAttribute('aria-pressed', String(method === 'qr'));
+    codeMethod.setAttribute('aria-pressed', String(method === 'code'));
+    qrInstructions.hidden = method !== 'qr'; codeForm.hidden = method !== 'code';
+    if (current) render(current); else { hideQR(); codePanel.hidden = true; }
+  }
+  function render(data: WhatsAppState) {
+    setRegionLoading('connection-loading', false);
+    const connectionChanged = current?.status !== data.status || current?.phone !== data.phone;
+    current = data; state = data.status;
+    if (connectionChanged) document.dispatchEvent(new CustomEvent('whatsapp-connection-updated'));
+    const connected = state === 'WORKING';
+    body.dataset.connected = String(connected); badge.dataset.connected = String(connected);
+    actions.hidden = !connected;
+    connectedPhone.hidden = !connected || !data.phone;
+    connectedPhone.textContent = connected ? data.phone ?? '' : '';
+    panel.hidden = !data.qr || state !== 'SCAN_QR_CODE' || method !== 'qr';
+    codePanel.hidden = connected || method !== 'code' || codeUntil <= Date.now();
+    empty.hidden = !panel.hidden || !codePanel.hidden;
+    if (!panel.hidden && data.qr) image.src = data.qr; else image.removeAttribute('src');
+    emptyLabel.textContent = connected ? 'Connected' : 'Not connected';
+    button.hidden = connected; setButtonBusy(button, state === 'STARTING'); codeButton.disabled = connected;
+    if (connected) {
+      codeUntil = 0; codeOutput.value = '';
+      badge.textContent = 'Connected';
+      announcement.textContent = 'WhatsApp connected.';
+    } else if (state === 'SCAN_QR_CODE') {
+      badge.textContent = 'Waiting to link';
+      button.textContent = 'Refresh QR code';
+    } else if (state === 'STARTING') {
+      badge.textContent = 'Connecting…'; button.textContent = 'Connecting…';
+    } else {
+      badge.textContent = state === 'UNAVAILABLE' ? 'Unavailable' : state === 'FAILED' ? 'Connection failed' : 'Not connected';
+      button.textContent = state === 'FAILED' || state === 'UNAVAILABLE' ? 'Try again' : 'Connect WhatsApp';
+      announcement.textContent = state === 'UNAVAILABLE' ? 'Connection status unavailable.' : 'WhatsApp is not connected.';
+    }
+    nextRefresh = Date.now() + data.refreshAfterSeconds * 1000; countdown.textContent = String(data.refreshAfterSeconds);
+  }
+  async function api<T>(path: string, payload?: unknown) {
+    controller = new AbortController();
+    const timeout = setTimeout(() => controller?.abort(), 45000);
+    try {
+      const response = await fetch(path, { method: payload === undefined ? 'GET' : 'POST', cache: 'no-store', signal: controller.signal,
+        ...(payload === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }) });
+      if (response.status === 401) { location.assign('/'); throw new Error('Log in to continue.'); }
+      const data = await response.json() as T & { error?: string };
+      if (!response.ok) throw new Error(data.error ?? 'Couldn’t update WhatsApp. Try again.');
+      return data;
+    } finally { clearTimeout(timeout); }
+  }
+  async function refresh(connect = false) {
+    if (busy || document.hidden) return;
+    setBusy(true); setButtonBusy(button, true); codeButton.disabled = true;
+    error.hidden = true;
+    button.textContent = connect ? 'Connecting...' : 'Refreshing...';
+    if (connect) announcement.textContent = 'Connecting WhatsApp...';
+    try { const data = await api<WhatsAppState>('/api/whatsapp', connect ? {} : undefined); error.hidden = true; render(data); }
+    catch (failure) {
+      if (controller?.signal.aborted && document.hidden) return;
+      codeUntil = 0; codeOutput.value = '';
+      render({ status: 'UNAVAILABLE', phone: null, qr: null, refreshAfterSeconds: 10 });
+      showError(failure instanceof Error && failure.name !== 'AbortError' ? failure.message : 'The connection timed out. Try again.');
+      button.hidden = false; button.textContent = 'Try again'; nextRefresh = Date.now() + 10000;
+    } finally { setBusy(false); setButtonBusy(button, state === 'STARTING' && Boolean(error.hidden)); codeButton.disabled = state === 'WORKING'; }
+  }
+  qrMethod.addEventListener('click', () => { method = 'qr'; updateMethod(); });
+  codeMethod.addEventListener('click', () => { method = 'code'; updateMethod(); });
+  button.addEventListener('click', () => void refresh(state !== 'SCAN_QR_CODE'));
+  codeForm.addEventListener('submit', async (event) => {
+    event.preventDefault(); if (busy) return;
+    const input = localPhoneInput.safeParse(codePhone.value);
+    if (!input.success) { showError(input.error.issues[0].message); codePhone.setAttribute('aria-invalid', 'true'); codePhone.focus(); return; }
+    setBusy(true); codeUntil = 0; codeOutput.value = ''; codePanel.hidden = true; empty.hidden = true;
+    codePhone.removeAttribute('aria-invalid'); setButtonBusy(codeButton, true); button.disabled = true; codeButton.textContent = 'Getting code…'; error.hidden = true;
+    announcement.textContent = 'Getting pairing code...';
+    try {
+      const data = await api<{ code: string; expiresInSeconds: number }>('/api/whatsapp/pairing-code', { phone: input.data });
+      codeOutput.value = `${data.code.slice(0, 4)} ${data.code.slice(4)}`; codeUntil = Date.now() + data.expiresInSeconds * 1000;
+      codeCountdown.textContent = String(data.expiresInSeconds);
+      codePanel.hidden = false; empty.hidden = true; hideQR(); announcement.textContent = 'Pairing code ready. Enter it in WhatsApp.'; nextRefresh = 0;
+      codeForm.querySelector<HTMLDetailsElement>('.linking-help')!.open = true;
+    } catch (failure) { announcement.textContent = 'Pairing code unavailable.'; showError(failure instanceof Error ? failure.message : 'Couldn’t get a pairing code. Try the QR code instead.'); }
+    finally { setBusy(false); setButtonBusy(codeButton, false); setButtonBusy(button, false); codeButton.textContent = 'Get pairing code'; }
+  });
+  disconnect.addEventListener('click', async () => {
+    if (busy || !window.confirm('Disconnect this WhatsApp number from Re-Target?')) return;
+    setBusy(true); setButtonBusy(disconnect, true); disconnect.textContent = 'Disconnecting…';
+    error.hidden = true; announcement.textContent = 'Disconnecting WhatsApp...';
+    try { const data = await api<WhatsAppState>('/api/whatsapp/disconnect', {}); error.hidden = true; codeUntil = 0; render(data); }
+    catch (failure) { announcement.textContent = 'WhatsApp could not be disconnected.'; showError(failure instanceof Error ? failure.message : 'Couldn’t disconnect WhatsApp. Try again.'); }
+    finally { setBusy(false); setButtonBusy(disconnect, false); disconnect.textContent = 'Disconnect WhatsApp'; }
+  });
+  function start() {
+    if (timer) clearInterval(timer);
+    if (document.hidden) return;
+    void refresh();
+    timer = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((nextRefresh - Date.now()) / 1000)); countdown.textContent = String(remaining);
+      const codeRemaining = Math.max(0, Math.ceil((codeUntil - Date.now()) / 1000)); codeCountdown.textContent = String(codeRemaining);
+      if (codeUntil && !codeRemaining) { codeUntil = 0; codeOutput.value = ''; codePanel.hidden = true; empty.hidden = !panel.hidden; announcement.textContent = 'Request a new pairing code if WhatsApp has not connected.'; }
+      if (!remaining) void refresh();
+    }, 250);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { if (timer) clearInterval(timer); timer = undefined; controller?.abort(); hideQR(); codePanel.hidden = true; }
+    else start();
+  });
+  window.addEventListener('pagehide', () => { if (timer) clearInterval(timer); controller?.abort(); });
+  window.addEventListener('pageshow', start);
+  updateMethod(); start();
+</script>
+<style>
+  .pairing { border: 1px solid var(--line); background: var(--surface); border-radius: 16px; overflow: hidden; }
+  .pairing :global(#connection-loading) { display:flex;flex-direction:column;flex:1; }
+  .pairing :global(#connection-loading > .region-skeleton) { padding:24px; }
+  .pairing :global(#connection-loading > .region-content) { display:flex;flex-direction:column;flex:1; }
+  .pairing :global(#connection-loading[aria-busy=true] > .region-content) { display:none; }
+  .pairing-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; padding: 20px 24px; border-bottom: 1px solid var(--line); }
+  h2 { font-size: 1.125rem; line-height: 1.4; margin: 0; font-weight: 650; letter-spacing: -.02em; }
+  #whatsapp-phone { color: var(--muted); margin: 7px 0 0; font-size: .875rem; max-width: 52ch; }
+  .connection { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; color: var(--muted); font-size: .75rem; font-weight: 600; background: var(--paper); padding: 6px 10px; border-radius: 6px; }
+  .connection::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .connection[data-connected="true"] { color: var(--green); background: var(--green-soft); }
+  .pairing-body { display: grid; grid-template-columns: 1fr 1fr; }
+  .pairing-body[data-connected="true"] { grid-template-columns: 1fr; }
+  .pairing-body[data-connected="true"] .pairing-display { border: 0; min-height: 190px; }
+  .pairing-body[data-connected="true"] .pairing-instructions { display: none; }
+  .pairing-display { background: #fafbf9; padding: 24px; display: grid; place-items: center; min-height: 360px; min-width: 0; border-right: 1px solid var(--line); }
+  .qr-frame { padding: 16px; background: #fff; width: fit-content; max-width: 100%; border: 1px solid var(--line); border-radius: 12px; }
+  .qr-frame img { display: block; width: 280px; max-width: 100%; height: auto; aspect-ratio: 1; }
+  .refresh-line { text-align: center; color: var(--muted); margin: 18px 0 0; font-size: .75rem; }
+  #qr-countdown, #code-countdown { font-variant-numeric: tabular-nums; color: var(--ink); }
+  .pairing-empty { display: flex; flex-direction: column; align-items: center; gap: 18px; color: var(--muted); font-size: .8125rem; text-align: center; }
+  .pairing-empty svg { width: 48px; height: 48px; color: var(--green); }
+  .pairing-instructions { padding: 24px; align-self: center; min-width: 0; }
+  h3 { margin: 0 0 12px; font-size: 1rem; font-weight: 650; }
+  .pairing-methods { display: flex; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); gap: 4px; }
+  .pairing-methods button { flex: 1; min-height: 44px; padding: 8px; border: 0; border-radius: 6px; color: var(--muted); background: transparent; cursor: pointer; font-size: .8125rem; font-weight: 550; }
+  .pairing-methods button[aria-pressed="true"] { background: var(--surface); color: var(--green); }
+  .pairing-methods button:hover:not(:disabled) { color: var(--green); }
+  ol { padding: 0; margin: 20px 0; list-style: none; counter-reset: steps; display: grid; gap: 12px; }
+  li { counter-increment: steps; display: block; padding-left: 38px; position: relative; font-size: .875rem; color: var(--muted); }
+  li::before { position: absolute; left: 0; content: counter(steps); width: 26px; height: 26px; display: grid; place-items: center; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 50%; font-size: .75rem; font-weight: 600; }
+  strong { color: var(--ink); font-weight: 600; }
+  #pairing-code-form { margin-top: 16px; }
+  .linking-help summary { display: none; }
+  .linking-help summary svg { width: 18px; height: 18px; }
+  .linking-help[open] summary svg { transform: rotate(90deg); }
+  label { display: block; font-size: .8125rem; font-weight: 600; margin-bottom: 8px; }
+  input { width: 100%; height: 48px; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--surface); color: var(--ink); }
+  input::placeholder { color: var(--muted); } input[aria-invalid="true"] { border-color: var(--error); }
+  .code-label { margin: 0 0 16px; font-size: .875rem; text-align: center; color: var(--muted); }
+  #pairing-code { display: block; font-size: clamp(1.6rem, 4vw, 2.1rem); letter-spacing: .06em; font-weight: 650; font-variant-numeric: tabular-nums; text-align: center; color: var(--ink); padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  .code-detail { text-align: center; color: var(--muted); font-size: .8125rem; margin: 16px 0 0; }
+  .connection-actions { border-top: 1px solid var(--line); padding: 20px 32px; }
+  .form-error { color: var(--error); background: #f7e7e2; border-radius: 8px; padding: 12px 14px; margin: 20px 24px; font-size: .875rem; }
+  .connection-announcement { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  [hidden] { display: none !important; }
+  @media (max-width: 1000px) and (min-width: 761px) { .pairing-display, .pairing-instructions { padding: 20px; } .qr-frame { padding: 12px; } }
+  @media (max-width: 760px) {
+    :global(main:has(.pairing) > .intro) { display: none; } :global(main:has(.pairing) > h1) { margin-bottom: 20px; }
+    .pairing-body { grid-template-columns: 1fr; } .pairing-display { border-right: 0; border-bottom: 1px solid var(--line); padding: 20px; min-height: 160px; } .pairing-instructions { padding: 20px; } .pairing-instructions h3 { display: none; }
+    .pairing-body:not([data-connected="true"]) .pairing-display:has(.pairing-empty:not([hidden])) { display: none; }
+    .linking-help { margin: 12px 0; } .linking-help summary { display: flex; justify-content: space-between; align-items: center; min-height: 44px; color: var(--green); cursor: pointer; font-size: .875rem; list-style: none; }
+    .linking-help summary::-webkit-details-marker { display: none; } .linking-help ol { margin-top: 12px; }
+  }
+  @media (max-width: 480px) { .pairing-header { flex-direction: column; gap: 12px; padding: 20px; } .qr-frame { padding: 12px; } }
+</style>

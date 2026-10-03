@@ -1,0 +1,18 @@
+---
+import Skeleton from './Skeleton.astro';
+interface Props { id:string; variant:'connection'|'destinations'|'audience'|'recipients'|'history'|'campaign-detail'|'campaign-editor'; label:string; pending?:boolean }
+const { id, variant, label, pending = true } = Astro.props;
+---
+<div id={id} class="loading-region" aria-busy={pending}>
+  <div class="region-skeleton"><Skeleton variant={variant} /></div>
+  <span class="loading-announcement region-loading-status" role="status">{label}</span>
+  <div class="region-content" inert={pending}><slot /></div>
+</div>
+<style is:global>
+  .loading-region { position:relative;min-width:0; }
+  .loading-region>.region-skeleton,.loading-region>.region-loading-status { display:none; }
+  .loading-region[aria-busy=true]>.region-skeleton { display:block; }
+  .loading-region[aria-busy=true]>.region-loading-status { display:block; }
+  .loading-region[aria-busy=true]>.region-content { display:none; }
+  .loading-region>.region-loading-status { position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
+</style>

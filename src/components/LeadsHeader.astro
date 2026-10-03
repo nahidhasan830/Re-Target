@@ -1,0 +1,8 @@
+<span id="lead-count" class="lead-count">—</span>
+<span class="courier-counts" aria-label="Leads by courier"><span id="pathao-count">Pathao (—)</span><span aria-hidden="true">·</span><span id="steadfast-count">Steadfast (—)</span></span>
+<style is:global>
+  .lead-count { font-size: .8125rem; font-weight: 600; padding: 2px 8px; background: var(--green-soft); color: var(--green); border-radius: 6px; font-variant-numeric: tabular-nums; }
+  .courier-counts { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; color: var(--muted); font-size: .8125rem; font-variant-numeric: tabular-nums; }
+  .courier-counts > span { white-space: nowrap; }
+  @media (max-width: 760px) { .topbar:has(.courier-counts) .header-title { flex-wrap: wrap; } .courier-counts { flex-basis: 100%; font-size: .75rem; gap: 4px; } }
+</style>

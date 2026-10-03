@@ -1,0 +1,98 @@
+---
+import AuthLayout from '../../layouts/AuthLayout.astro';
+import PasswordField from '../../components/PasswordField.astro';
+import { limitLogin, requireSameOrigin } from '../../lib/auth';
+import { validateSetup, type SetupErrors } from '../../lib/account-validation';
+import { acceptInvitation, invitationForToken, invitationStatus } from '../../lib/invitations';
+import { HttpError, readBody } from '../../lib/http';
+
+const token = Astro.params.token ?? '';
+let invitation = await invitationForToken(token);
+let state = invitation ? invitationStatus(invitation) : 'invalid';
+let companyName = '';
+let errors: SetupErrors = {};
+let message = '';
+if (Astro.request.method === 'POST') {
+  try {
+    requireSameOrigin(Astro.request);
+    if (Astro.request.headers.get('content-type')?.split(';')[0] !== 'application/x-www-form-urlencoded') throw new HttpError(415, 'Refresh the page and try again.');
+    await limitLogin(Astro.request, 'account-setup');
+    const form = new URLSearchParams(await readBody(Astro.request));
+    companyName = form.get('companyName') ?? '';
+    const validated = validateSetup({ companyName, password: form.get('password') ?? '' });
+    errors = validated.errors;
+    if (!validated.result.success) Astro.response.status = 400;
+    else {
+      const phone = await acceptInvitation(token, validated.result.data.companyName, validated.result.data.password);
+      return Astro.redirect(`/?setup=complete&phone=${phone}`, 303);
+    }
+  } catch (error) {
+    Astro.response.status = error instanceof HttpError ? error.status : 503;
+    message = error instanceof HttpError ? error.message : 'Couldn’t create your account. Try again shortly.';
+    invitation = await invitationForToken(token);
+    state = invitation ? invitationStatus(invitation) : 'invalid';
+  }
+} else if (state !== 'pending') Astro.response.status = state === 'invalid' ? 404 : state === 'accepted' ? 200 : 410;
+const title = state === 'pending' ? 'Set up your account' : state === 'accepted' ? 'Account already set up' : 'Invitation unavailable';
+---
+<AuthLayout title={title}>
+  <h1>{title}</h1>
+  {state === 'pending' ? <>
+    <form method="post" id="setup-form">
+      {message && <p class="form-error" role="alert">{message}</p>}
+      <div class="field"><label for="phone">Phone number</label><input id="phone" type="tel" value={invitation!.phone} readonly autocomplete="username" /></div>
+      <div class="field"><label for="companyName">Company name</label><input id="companyName" name="companyName" autocomplete="organization" required maxlength="120" value={companyName} aria-invalid={errors.companyName ? 'true' : undefined} aria-describedby="companyName-error" /><p class="field-error" id="companyName-error" aria-live="polite" hidden={!errors.companyName}>{errors.companyName}</p></div>
+      <PasswordField error={errors.password} />
+      <button class="primary" type="submit" id="setup-submit">Create account</button>
+      <p id="setup-status" class="status" role="status"></p>
+    </form>
+  </> : <>
+    <p class="intro">{state === 'accepted' ? 'Your account is ready. Log in with your phone number and password.' : state === 'expired' ? 'This invitation has expired. Ask the admin to send a new link.' : state === 'revoked' ? 'The admin revoked this invitation. Contact them for a new link.' : 'This link is invalid or has been replaced. Ask the admin for the latest invitation.'}</p>
+    <a class="primary login-link" href={state === 'accepted' ? `/?phone=${invitation!.phone}` : '/'}>Go to login</a>
+  </>}
+</AuthLayout>
+<script>
+  import { validateSetup, type SetupErrors } from '../../lib/account-validation';
+  const form = document.querySelector<HTMLFormElement>('#setup-form');
+  if (form) {
+    form.noValidate = true;
+    const companyName = document.querySelector<HTMLInputElement>('#companyName')!;
+    const password = document.querySelector<HTMLInputElement>('#password')!;
+    const button = document.querySelector<HTMLButtonElement>('#setup-submit')!;
+    const status = document.querySelector<HTMLElement>('#setup-status')!;
+    const fields = { companyName, password };
+    let busy = false;
+    function showErrors(errors: SetupErrors) {
+      for (const name of ['companyName', 'password'] as const) {
+        const element = document.getElementById(`${name}-error`)!;
+        element.textContent = errors[name] ?? '';
+        element.hidden = !errors[name];
+        fields[name].setAttribute('aria-invalid', String(Boolean(errors[name])));
+      }
+    }
+    form.addEventListener('submit', (event) => {
+      const validated = validateSetup({ companyName: companyName.value, password: password.value });
+      showErrors(validated.errors);
+      if (busy || !validated.result.success) {
+        event.preventDefault();
+        if (!busy) (validated.errors.companyName ? companyName : password).focus();
+        return;
+      }
+      busy = true; button.disabled = true; button.textContent = 'Creating account…';
+      status.textContent = 'Setting up your account…'; form.setAttribute('aria-busy', 'true');
+    });
+    window.addEventListener('pageshow', () => { busy = false; button.disabled = false; button.textContent = 'Create account'; status.textContent = ''; form.removeAttribute('aria-busy'); });
+  }
+</script>
+<style is:global>
+  #setup-form .field { margin-bottom: 24px; }
+  #setup-form label { display: block; margin-bottom: 8px; font-size: .9rem; font-weight: 600; }
+  #setup-form input { width: 100%; height: 52px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); padding: 12px 14px; font-size: 1rem; }
+  #setup-form .password-wrap input { padding-right: 56px; }
+  #setup-form input[readonly] { background: #eaf1e8; font-variant-numeric: tabular-nums; }
+  #setup-form input[aria-invalid="true"] { border-color: var(--error); }
+  #setup-form .field-error { margin: 7px 0 0; font-size: .8rem; color: var(--error); }
+  #setup-form .status { font-size: .8rem; color: var(--muted); }
+  #setup-form .form-error { color: var(--error); background: #f7e7e2; padding: 12px 14px; border-radius: 8px; }
+  .login-link { display: inline-flex; justify-content: center; text-decoration: none; }
+</style>

@@ -1,0 +1,25 @@
+---
+import Skeleton from './Skeleton.astro';
+interface Props { auth?: boolean }
+const { auth = false } = Astro.props;
+const variants = auth ? ['auth'] as const : ['dashboard','leads','campaigns','users','account','courier','whatsapp','campaign-editor','campaign-detail'] as const;
+---
+<div id="page-loading" hidden>
+  <span class="loading-announcement" id="page-loading-status" role="status" aria-live="polite"></span>
+  {variants.map(variant => <template data-page-skeleton={variant}><Skeleton variant={variant} /></template>)}
+  <div id="page-loading-content"></div>
+</div>
+<script>
+  import { initPageLoading } from '../lib/page-loading';
+  initPageLoading();
+</script>
+<style is:global>
+  main:has(#page-loading) { position:relative; }
+  #page-loading { position:absolute;inset:0;z-index:1;padding:20px 24px;background:var(--paper);min-height:100%; }
+  #page-loading[hidden] { display:none; }
+  main.page-pending > :not(#page-loading) { visibility:hidden; }
+  .workspace:has(main.page-pending) .header-actions,.workspace:has(main.page-pending) .header-title>:not(h1) { visibility:hidden; }
+  main:has([data-page-skeleton=auth]) #page-loading { padding:inherit; }
+  .loading-announcement { position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
+  @media(max-width:760px) { #page-loading { padding:20px; } }
+</style>

@@ -1,0 +1,14 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import Campaigns from '../../../components/Campaigns.astro';
+import CampaignListActions from '../../../components/CampaignListActions.astro';
+import { currentAccount } from '../../../lib/auth';
+const account = await currentAccount(Astro.cookies);
+if (!account) return Astro.redirect('/');
+const base = account.role === 'admin' ? '/admin' : '/app';
+if (base !== '/admin') return Astro.redirect(`${base}/campaigns`);
+---
+<DashboardLayout title="Campaigns" active="campaigns" phone={account.phone} role={account.role} companyName={account.companyName}>
+<CampaignListActions slot="header-actions" base={base} />
+  <Campaigns base={base} />
+</DashboardLayout>
