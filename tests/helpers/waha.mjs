@@ -74,5 +74,13 @@ export async function fakeWaha(key) {
     send(404, { error: 'Missing fixture route' });
   });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
-  return { url: `http://127.0.0.1:${server.address().port}`, close: () => new Promise((resolve) => server.close(resolve)) };
+  // The gateway client only accepts HTTPS, so the fixture origin is routed to this plain HTTP server.
+  const url = 'https://waha.test', local = `http://127.0.0.1:${server.address().port}`, nativeFetch = globalThis.fetch;
+  globalThis.fetch = (input, init) => {
+    const target = new URL(input instanceof Request ? input.url : input);
+    if (target.origin !== url) return nativeFetch(input, init);
+    const routed = new URL(target.pathname + target.search, local);
+    return nativeFetch(input instanceof Request ? new Request(routed, input) : routed, init);
+  };
+  return { url, close: () => { globalThis.fetch = nativeFetch; return new Promise((resolve) => server.close(resolve)); } };
 }

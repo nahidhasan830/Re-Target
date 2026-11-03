@@ -1,18 +1,20 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 
-export const localPhoneInput = z.string().trim().regex(/^01[0-9]{9}$/, 'Enter an 11-digit phone number starting with 01.');
-const companyName = z.string().trim().min(1, 'Enter your company name.').max(120, 'Use no more than 120 characters.');
-const password = z.string().min(10, 'Use at least 10 characters.').max(128, 'Use no more than 128 characters.')
-  .refine((value) => value.trim().length > 0, 'Enter your password.');
-export const setupInput = z.object({ companyName, password }).strict();
-export const companyInput = z.object({ action: z.literal('company'), companyName }).strict();
-export const passwordInput = z.object({
+export const localPhoneInput = z.string().check(z.trim(), z.regex(/^01[0-9]{9}$/, 'Enter an 11-digit phone number starting with 01.'));
+const companyName = z.string().check(z.trim(), z.minLength(1, 'Enter your company name.'), z.maxLength(120, 'Use no more than 120 characters.'));
+const password = z.string().check(z.minLength(10, 'Use at least 10 characters.'), z.maxLength(128, 'Use no more than 128 characters.'),
+  z.refine((value) => value.trim().length > 0, 'Enter your password.'));
+export const setupInput = z.strictObject({ companyName, password });
+export const companyInput = z.strictObject({ action: z.literal('company'), companyName });
+export const passwordInput = z.strictObject({
   action: z.literal('password'),
-  currentPassword: z.string().min(1, 'Enter your current password.').max(128, 'Use no more than 128 characters.'),
+  currentPassword: z.string().check(z.minLength(1, 'Enter your current password.'), z.maxLength(128, 'Use no more than 128 characters.')),
   newPassword: password,
-  confirmPassword: z.string().min(1, 'Confirm your new password.').max(128, 'Use no more than 128 characters.'),
-}).strict().refine((value) => value.newPassword === value.confirmPassword, { path: ['confirmPassword'], message: 'Passwords don’t match.' })
-  .refine((value) => value.currentPassword !== value.newPassword, { path: ['newPassword'], message: 'Choose a different password.' });
+  confirmPassword: z.string().check(z.minLength(1, 'Confirm your new password.'), z.maxLength(128, 'Use no more than 128 characters.')),
+}).check(
+  z.refine((value) => value.newPassword === value.confirmPassword, { path: ['confirmPassword'], error: 'Passwords don’t match.' }),
+  z.refine((value) => value.currentPassword !== value.newPassword, { path: ['newPassword'], error: 'Choose a different password.' }),
+);
 export type AccountErrors = Partial<Record<'companyName' | 'currentPassword' | 'newPassword' | 'confirmPassword', string>>;
 
 export function validateAccountUpdate(input: Record<string, string>) {
@@ -25,6 +27,11 @@ export function validateAccountUpdate(input: Record<string, string>) {
   return { result, errors };
 }
 export type SetupErrors = Partial<Record<'companyName' | 'password', string>>;
+
+export function validateNewPassword(value: string) {
+  const result = password.safeParse(value);
+  return { result, error: result.success ? undefined : result.error.issues[0]?.message };
+}
 
 export function validateSetup(input: unknown) {
   const result = setupInput.safeParse(input);

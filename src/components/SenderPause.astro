@@ -1,0 +1,86 @@
+<div class="sender-review">
+  <div class="sender-pause" id="sender-pause" role="group" aria-labelledby="sender-pause-title" hidden>
+    <div class="sender-pause-text">
+      <h3 id="sender-pause-title">Sending paused</h3>
+      <p id="sender-pause-reason"></p>
+      <p id="sender-pause-error" class="error" role="alert" hidden></p>
+    </div>
+    <button class="primary" id="resume-sender" type="button" data-pending="Resuming…" disabled>Resume sending</button>
+  </div>
+  <p class="sr-only" id="sender-pause-status" role="status"></p>
+</div>
+<script>
+  import { setButtonBusy } from '../lib/control-state';
+  type ReviewState = {
+    sender: { pauseReason: string | null } | null;
+    attempt: { status: string; passwordResetId: string | null; recipient: string | null } | null;
+  };
+  const section = document.querySelector<HTMLElement>('#sender-pause')!;
+  const reason = document.querySelector<HTMLElement>('#sender-pause-reason')!;
+  const error = document.querySelector<HTMLElement>('#sender-pause-error')!;
+  const resume = document.querySelector<HTMLButtonElement>('#resume-sender')!;
+  const status = document.querySelector<HTMLElement>('#sender-pause-status')!;
+  let review: ReviewState | undefined;
+  let connected = false;
+  let busy = false;
+  function explain({ sender, attempt }: ReviewState) {
+    if (attempt?.status === 'unconfirmed') {
+      const what = attempt.passwordResetId ? 'A password reset link' : 'An invitation';
+      const to = attempt.recipient ? ` to ${attempt.recipient.replace(/^880/, '0')}` : '';
+      return `${what}${to} may not have sent. Check WhatsApp, then resume. It will be marked as not sent.`;
+    }
+    if (sender?.pauseReason?.startsWith('WhatsApp disconnected')) return 'WhatsApp disconnected, so invitations and reset links are on hold.';
+    return sender?.pauseReason ?? '';
+  }
+  function render() {
+    section.hidden = !review?.sender?.pauseReason;
+    if (section.hidden) return;
+    reason.textContent = `${explain(review!)}${connected ? '' : ' Connect WhatsApp to resume.'}`;
+    setButtonBusy(resume, busy, !connected);
+  }
+  async function api(payload?: unknown) {
+    const response = await fetch('/api/campaign-sender', { method: payload ? 'POST' : 'GET', cache: 'no-store',
+      ...(payload ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) } : {}) });
+    if (response.status === 401) { location.assign('/'); throw new Error('Log in to continue.'); }
+    const data = await response.json() as ReviewState & { error?: string };
+    if (!response.ok) throw new Error(data.error ?? 'Couldn’t resume sending. Try again.');
+    return data;
+  }
+  async function load() {
+    if (busy || document.hidden) return;
+    try { review = await api(); render(); } catch { /* The notice stays as last shown. */ }
+  }
+  resume.addEventListener('click', async () => {
+    if (busy || !review?.sender?.pauseReason) return;
+    const unconfirmed = review.attempt?.status === 'unconfirmed';
+    busy = true; error.hidden = true; render();
+    try {
+      review = await api({
+        requestId: crypto.randomUUID(),
+        evidence: unconfirmed ? 'Checked WhatsApp and resumed from the WhatsApp page; marked not sent.' : 'Resumed from the WhatsApp page.',
+        ...(unconfirmed ? { invitationOutcome: 'failed' } : {}),
+      });
+      status.textContent = 'Sending resumed.';
+    } catch (failure) {
+      error.textContent = failure instanceof Error ? failure.message : 'Couldn’t resume sending. Try again.';
+      error.hidden = false;
+    } finally { busy = false; render(); }
+  });
+  document.addEventListener('whatsapp-connection-updated', (event) => {
+    connected = (event as CustomEvent<{ status: string }>).detail?.status === 'WORKING';
+    render(); void load();
+  });
+  document.addEventListener('visibilitychange', () => void load());
+</script>
+<style>
+  .sender-pause { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; padding: 14px 24px; border-bottom: 1px solid var(--line); background: var(--warning-soft); }
+  .sender-pause-text { display: grid; gap: 2px; min-width: 0; }
+  h3 { color: var(--warning); font-size: var(--fs-sm); }
+  p { margin: 0; color: var(--ink); font-size: var(--fs-sm); line-height: 1.45; }
+  p.error { color: var(--danger); }
+  .sender-pause .primary { flex: none; }
+  @media (max-width: 760px) {
+    .sender-pause { flex-direction: column; align-items: stretch; padding: 14px 16px; }
+    .sender-pause .primary { width: 100%; }
+  }
+</style>

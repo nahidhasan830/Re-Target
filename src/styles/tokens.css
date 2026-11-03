@@ -1,0 +1,139 @@
+:root {
+  color-scheme: light dark;
+
+  --font: 'Anek Bangla Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --fs-2xs: .6875rem;
+  --fs-xs: .75rem;
+  --fs-sm: .8125rem;
+  --fs-btn: .875rem;
+  --fs-md: .9375rem;
+  --fs-lg: 1.0625rem;
+  --fs-xl: 1.375rem;
+  --fs-brand: 1.1875rem;
+  --fs-2xl: 1.75rem;
+  --fs-display: 2.5rem;
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+
+  --sidebar-w: 236px;
+  --topbar-h: 64px;
+  --main-pad-x: 28px;
+  --main-pad-y: 20px;
+  --nav-h: 0px;
+  --content-h: calc(100dvh - var(--topbar-h) - var(--main-pad-y) * 2 - var(--nav-h));
+
+  /* Muslin ground, indigo ink; each thread colour carries one meaning. */
+  --ground: #f2f3f7;
+  --surface: #fff;
+  --surface-2: #f7f8fb;
+  --surface-3: #eceef4;
+  --line: #e0e3ec;
+  --line-strong: #c7ccd9;
+  --ink: #121a2f;
+  --ink-2: #4b5470;
+  --ink-3: #687089;
+
+  --accent: #b0125b;
+  --accent-hover: #970f4e;
+  --accent-press: #7f0c42;
+  --accent-soft: #fbe9f1;
+  --accent-fg: #b0125b;
+  --on-accent: #fff;
+
+  --current: #3341a8;
+  --current-soft: #e9ecfb;
+  --current-ring: rgb(51 65 168 / .22);
+
+  --success: #17784a;
+  --success-soft: #e3f4ea;
+  --warning: #8a5b00;
+  --warning-mark: #d99a0b;
+  --warning-soft: #fcf1d5;
+  --danger: #b8321c;
+  --danger-soft: #fbe9e5;
+  --danger-line: #efc6be;
+  --danger-ring: rgb(184 50 28 / .2);
+  --on-danger: #fff;
+
+  --focus: #3341a8;
+  --backdrop: rgb(12 16 30 / .45);
+  --shadow-overlay: 0 18px 44px -14px rgb(18 26 47 / .28), 0 2px 8px rgb(18 26 47 / .06);
+  --shadow-raised: 0 1px 2px rgb(18 26 47 / .06), 0 0 0 1px var(--line);
+  --anchal: #1b2156;
+  --anchal-thread: #eef0fa;
+  --chat: #e7ebe2;
+  --bubble: #d6f2c9;
+  --bubble-ink: #1b2e1f;
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234b5470' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #0b0f1a;
+    --surface: #131a28;
+    --surface-2: #0f1522;
+    --surface-3: #1c2436;
+    --line: #252e43;
+    --line-strong: #36405b;
+    --ink: #e9ecf5;
+    --ink-2: #a5adc3;
+    --ink-3: #8790a8;
+
+    --accent: #c42266;
+    --accent-hover: #d42f74;
+    --accent-press: #b01d5b;
+    --accent-soft: #3a1428;
+    --accent-fg: #ff7ab2;
+
+    --current: #8f9bff;
+    --current-soft: #1e2556;
+    --current-ring: rgb(143 155 255 / .3);
+
+    --success: #4cc98a;
+    --success-soft: #10301f;
+    --warning: #f0bf4c;
+    --warning-mark: #e0a823;
+    --warning-soft: #33270b;
+    --danger: #ff8a73;
+    --danger-soft: #3b1913;
+    --danger-line: #6b2a20;
+    --danger-ring: rgb(255 138 115 / .25);
+    --on-danger: #1f0b07;
+
+    --focus: #9aa6ff;
+    --backdrop: rgb(0 0 0 / .6);
+    --shadow-overlay: 0 18px 44px -14px rgb(0 0 0 / .7), 0 2px 8px rgb(0 0 0 / .3);
+    --anchal: #161b45;
+    --chat: #0f1a17;
+    --bubble: #1f4a33;
+    --bubble-ink: #e3f5e8;
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a5adc3' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --topbar-h: 56px;
+    --main-pad-x: 16px;
+    --main-pad-y: 16px;
+  }
+}

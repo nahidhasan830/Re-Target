@@ -20,7 +20,6 @@ COURIER_ENCRYPTION_KEY=replace-with-a-64-character-hex-key
 
 # Signed campaign webhooks and private media preparation.
 WHATSAPP_WEBHOOK_SECRET=replace-with-a-random-secret-at-least-32-characters
-MEDIA_PREPARATION_URL=
 MEDIA_PREPARATION_KEY=replace-with-a-random-secret-at-least-32-characters
 
 # Private operational phone numbers, shared with production.

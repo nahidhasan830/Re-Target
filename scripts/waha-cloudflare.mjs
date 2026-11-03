@@ -81,8 +81,7 @@ async function setup() {
   let local = '';
   try { local = await readFile('.dev.vars', 'utf8'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
   local = local.split('\n').filter((line) => !Object.keys(secrets).some((key) => line.startsWith(`${key}=`))).join('\n').trimEnd();
-  const localSecrets = { ...secrets, WAHA_BASE_URL: 'http://127.0.0.1:3000' };
-  await writeFile('.dev.vars', `${local}\n${Object.entries(localSecrets).map(([key, value]) => `${key}=${value}`).join('\n')}\n`, { mode: 0o600 });
+  await writeFile('.dev.vars', `${local}\n${Object.entries(secrets).map(([key, value]) => `${key}=${value}`).join('\n')}\n`, { mode: 0o600 });
   await chmod('.dev.vars', 0o600);
   console.log('Dedicated Access application, service token, tunnel, and private backend configuration prepared.');
   const zones = await api('/zones?name=nahidlabs.com');

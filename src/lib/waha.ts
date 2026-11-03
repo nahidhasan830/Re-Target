@@ -13,12 +13,11 @@ export async function gatewayRequest(path: string, method = 'GET', body?: unknow
   if (!base || !key || key.startsWith('replace-with-')) throw new HttpError(503, 'WhatsApp is unavailable. Try again shortly.');
   const url = new URL(base);
   const endpoint = new URL(path, url);
-  if (url.username || url.password || url.search || url.hash || endpoint.origin !== url.origin ||
-      (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)))) {
+  if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || endpoint.origin !== url.origin) {
     throw new HttpError(503, 'WhatsApp requires a protected HTTPS service.');
   }
   const headers: Record<string, string> = { 'X-Api-Key': key, Accept: 'application/json' };
-  if (new URL(base).protocol === 'https:' && env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET) {
+  if (env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET) {
     headers['CF-Access-Client-Id'] = env.CF_ACCESS_CLIENT_ID;
     headers['CF-Access-Client-Secret'] = env.CF_ACCESS_CLIENT_SECRET;
   }
@@ -110,18 +109,27 @@ export async function listWhatsAppSessions() {
   return data;
 }
 
-export async function sendInvitation(phone: string, link: string): Promise<{ status: 'sent' | 'failed' | 'unknown'; messageId: string | null; error: string | null }> {
+type AdminDelivery = { status: 'sent' | 'failed' | 'unknown'; messageId: string | null; error: string | null };
+
+export function sendInvitation(phone: string, link: string) {
+  return sendAdminText(phone, `You’re invited to Re-Target.\n\nSet up your business account:\n${link}\n\nThis invitation expires in 72 hours. Keep this link private.`,
+    'WhatsApp could not send the invitation. Check the number and resend.');
+}
+
+export function sendPasswordReset(phone: string, link: string) {
+  return sendAdminText(phone, `Reset your Re-Target password:\n${link}\n\nThis link expires in 30 minutes. If you didn’t ask for it, ignore this message.`,
+    'WhatsApp could not send the reset link.');
+}
+
+async function sendAdminText(phone: string, text: string, rejected: string): Promise<AdminDelivery> {
   let response: Response;
   try {
-    response = await gatewayRequest('/api/sendText', 'POST', {
-      session: SESSION, chatId: `88${phone}@c.us`, linkPreview: false,
-      text: `You’re invited to Re-Target.\n\nSet up your business account:\n${link}\n\nThis invitation expires in 72 hours. Keep this link private.`,
-    });
+    response = await gatewayRequest('/api/sendText', 'POST', { session: SESSION, chatId: `88${phone}@c.us`, linkPreview: false, text });
   } catch {
     return { status: 'unknown', messageId: null, error: 'Sending could not be confirmed. Check WhatsApp before resending.' };
   }
   if (!response.ok) return { status: response.status >= 500 ? 'unknown' : 'failed', messageId: null,
-    error: response.status >= 500 ? 'Sending could not be confirmed. Check WhatsApp before resending.' : 'WhatsApp could not send the invitation. Check the number and resend.' };
+    error: response.status >= 500 ? 'Sending could not be confirmed. Check WhatsApp before resending.' : rejected };
   try {
     const data = await gatewayJson(response) as { id?: string };
     if (typeof data.id !== 'string' || !data.id) throw new Error('Missing message ID');

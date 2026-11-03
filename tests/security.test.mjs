@@ -111,7 +111,7 @@ test('admin API protection covers encoded paths and sets browser protections on 
 
 test('gateway rejects insecure hosts, userinfo and destination switching before sending credentials', async () => {
   const env = globalThis.__securityEnv, base = env.WAHA_BASE_URL;
-  for (const url of ['http://gateway.example', 'https://user:password@gateway.example']) {
+  for (const url of ['http://gateway.example', 'http://127.0.0.1:3000', 'http://localhost:3000', 'https://user:password@gateway.example']) {
     env.WAHA_BASE_URL = url;
     await assert.rejects(waha.gatewayRequest('/api/sessions'), e => e.status === 503);
   }

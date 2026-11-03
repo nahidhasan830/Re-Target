@@ -1,4 +1,4 @@
-import { LIMITS } from './campaign-content';
+import { LIMITS } from './campaign-rules';
 import { setButtonBusy } from './control-state';
 
 export type MediaAsset = {
@@ -128,7 +128,7 @@ export function initMediaBrowser(root: HTMLElement, options: {
         appendChildren(preview, icon('M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12ZM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z'), element('span', 'Preview'));
         preview.disabled = asset.state !== 'ready';
         preview.onclick = thumbnail.onclick = () => options.onPreview?.(asset);
-        const remove = element('button', '', 'secondary media-delete');
+        const remove = element('button', '', 'secondary destructive media-delete');
         remove.type = 'button';
         remove.setAttribute('aria-label', `Delete ${asset.name}`);
         remove.title = asset.in_use ? 'Used in a campaign' : asset.state === 'preparing' ? 'Wait for preparation to finish' : 'Delete media';

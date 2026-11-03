@@ -127,6 +127,13 @@
       "when": 1793681701589,
       "tag": "0017_whatsapp_event_reads",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1793699353373,
+      "tag": "0018_medical_sumo",
+      "breakpoints": true
     }
   ]
 }

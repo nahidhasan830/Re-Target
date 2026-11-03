@@ -792,21 +792,25 @@ async function markUnconfirmed(
   await pauseSender(ownerId, error);
 }
 export async function recoverCampaigns() {
-  const invitations = await env.DB.prepare(
-    "SELECT a.id FROM campaign_send_attempts a JOIN sender_dispatch_state s ON s.active_attempt=a.id WHERE a.invitation_id IS NOT NULL AND a.status='submitting' AND s.lease_until<=unixepoch() LIMIT 10",
-  ).all<{ id: string }>();
-  for (const attempt of invitations.results) {
+  const adminMessages = await env.DB.prepare(
+    "SELECT a.id,a.invitation_id invitationId FROM campaign_send_attempts a JOIN sender_dispatch_state s ON s.active_attempt=a.id WHERE (a.invitation_id IS NOT NULL OR a.password_reset_id IS NOT NULL) AND a.status='submitting' AND s.lease_until<=unixepoch() LIMIT 10",
+  ).all<{ id: string; invitationId: string | null }>();
+  for (const attempt of adminMessages.results) {
+    const subject = attempt.invitationId ? 'Invitation' : 'Password reset';
     await env.DB.batch([
       env.DB.prepare(
-        "UPDATE campaign_send_attempts SET status='unconfirmed',error='Invitation request expired without a persisted outcome.' WHERE id=? AND status='submitting'",
-      ).bind(attempt.id),
+        "UPDATE campaign_send_attempts SET status='unconfirmed',error=? WHERE id=? AND status='submitting'",
+      ).bind(`${subject} request expired without a persisted outcome.`, attempt.id),
       env.DB.prepare(
         "UPDATE invitations SET delivery_status='unknown',delivery_error='Check WhatsApp before resending.' WHERE id=(SELECT invitation_id FROM campaign_send_attempts WHERE id=?) AND delivery_status='sending'",
+      ).bind(attempt.id),
+      env.DB.prepare(
+        "UPDATE password_resets SET delivery_status='unknown' WHERE id=(SELECT password_reset_id FROM campaign_send_attempts WHERE id=?) AND delivery_status='sending'",
       ).bind(attempt.id),
     ]);
     await pauseSender(
       'admin',
-      'Invitation send unconfirmed. Review the sender on WhatsApp.',
+      `${subject} send unconfirmed. Review the sender on WhatsApp.`,
     );
   }
   const expired = await env.DB.prepare(

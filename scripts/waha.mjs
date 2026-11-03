@@ -30,14 +30,6 @@ async function initialize() {
     console.log(`Private credentials generated in ${directory}/.env.`);
   } catch (error) { if (error.code !== 'EEXIST') throw error; }
   await chmod(`${directory}/.env`, 0o600);
-  const settings = await readSettings();
-  let local = '';
-  try { local = await readFile('.dev.vars', 'utf8'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
-  const existing = new Set(local.split('\n').map((line) => line.match(/^([A-Z][A-Z0-9_]*)=/)?.[1]));
-  const missing = Object.entries({ WAHA_BASE_URL: origin, WAHA_API_KEY: settings.WAHA_API_KEY })
-    .filter(([key]) => !existing.has(key));
-  if (missing.length) await writeFile('.dev.vars', `${local.trimEnd()}\n${missing.map(([key, value]) => `${key}=${value}`).join('\n')}\n`, { mode: 0o600 });
-  await chmod('.dev.vars', 0o600);
 }
 
 async function api(path, options = {}) {

@@ -84,15 +84,7 @@ const title = state === 'pending' ? 'Set up your account' : state === 'accepted'
     window.addEventListener('pageshow', () => { busy = false; button.disabled = false; button.textContent = 'Create account'; status.textContent = ''; form.removeAttribute('aria-busy'); });
   }
 </script>
-<style is:global>
-  #setup-form .field { margin-bottom: 24px; }
-  #setup-form label { display: block; margin-bottom: 8px; font-size: .9rem; font-weight: 600; }
-  #setup-form input { width: 100%; height: 52px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); padding: 12px 14px; font-size: 1rem; }
-  #setup-form .password-wrap input { padding-right: 56px; }
-  #setup-form input[readonly] { background: #eaf1e8; font-variant-numeric: tabular-nums; }
-  #setup-form input[aria-invalid="true"] { border-color: var(--error); }
-  #setup-form .field-error { margin: 7px 0 0; font-size: .8rem; color: var(--error); }
-  #setup-form .status { font-size: .8rem; color: var(--muted); }
-  #setup-form .form-error { color: var(--error); background: #f7e7e2; padding: 12px 14px; border-radius: 8px; }
-  .login-link { display: inline-flex; justify-content: center; text-decoration: none; }
+<style>
+  input[readonly] { background: var(--surface-2); color: var(--ink-2); }
+  .status:empty { display: none; }
 </style>

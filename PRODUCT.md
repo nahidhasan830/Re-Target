@@ -4,7 +4,7 @@ An invite-only outreach application for businesses in Bangladesh. Admins invite 
 
 ## Current surface
 
-Login opens Dashboard at `/admin` for admins and `/app` for businesses. Navigation follows Dashboard, Campaigns, Media, Leads, Courier, WhatsApp, Users (admin only), and Account. Users sends invitation links from the admin's connected WhatsApp, shows account setup and business connection status, and supports resending or revoking invitations. Links expire after 72 hours and can be used once; resending replaces the previous link.
+Login opens Dashboard at `/admin` for admins and `/app` for businesses. Navigation groups Dashboard; Outreach (Campaigns, Leads, Media); Channels (WhatsApp, Courier); Admin (Users, admin only); and Account at the sidebar foot. Users sends invitation links from the admin's connected WhatsApp, shows account setup and business connection status, and supports resending or revoking invitations. Links expire after 72 hours and can be used once; resending replaces the previous link.
 
 The invitation form is always visible. At widths of at least 1101px and heights of at least 600px, Users uses 1:2 columns with both panels filling the available height. The invitation content is centered with an 80px envelope-plus icon; the table scrolls internally under sticky headings and keeps pagination below the rows. Smaller or shorter viewports stack the panels and scroll naturally. Pages display 25 records on desktop and five in compact layouts; API cursor batches remain up to 50 records. At 760px and below, the invitation card uses a centered 56px icon and title, 16px padding, and a phone field beside Send; secondary copy hides. Refresh becomes a 44px icon action, and single-page pagination hides.
 
@@ -52,9 +52,9 @@ WhatsApp uses two desktop columns: Connection on the left and optional Test dest
 
 ## Interface commitments
 
-Use a modern dashboard shell with a desktop sidebar and a menu button opening a left-side drawer on mobile, cream workspace, white panels, green active states, system typography, and restrained forms. Use the available desktop width and aim for a single screen where practical through compact spacing, responsive columns, pagination, and disclosure. Keep primary controls visible and permit natural page scrolling on small screens, at zoom, or with long content; routine forms should not have nested scrolling.
+Use the Jamdani Loom identity: a cool ground with white panels, Anek Bangla Variable, rani (magenta) for the next or primary action, indigo for location, selection and focus, and diamond (booti) status marks. Light is the default and dark follows the system preference. Desktop uses a grouped sidebar; mobile uses a bottom tab bar (Home, Campaigns, Leads, Media, More) whose More sheet holds WhatsApp, Courier, Users and Account. The campaign workspace is a focus view with a back action and no tab bar. Use the available desktop width and aim for a single screen where practical through compact spacing, responsive columns, pagination, and disclosure. Keep primary controls visible and permit natural page scrolling on small screens, at zoom, or with long content; routine forms should not have nested scrolling.
 
-The shared admin and business dashboard shell keeps Log out at the sidebar bottom, without the account profile or phone block, and has no platform footer.
+The shared admin and business dashboard shell keeps Account and Log out at the sidebar bottom, without an account profile or phone block, and has no platform footer.
 
 Keep copy concise, accessible labels and keyboard interaction intact, touch targets at least 44px, and verify mobile and desktop. Label the navigation item and pages WhatsApp. Preserve the existing login and invitation setup surfaces; login needs no extra access notice or phone-format explanation beyond its placeholder. The pairing QR needs a plain white surface with its full quiet zone visible.
 
@@ -108,3 +108,11 @@ Campaign sending limits (3 October 2026): The shared sender allowance is 450 out
 Media layout (3 October 2026): Media uses a 1:2 desktop layout above 1100px, with a centered upload panel and a larger library panel. Both panels fill the available desktop height. The library displays six files in three columns from 1360px, four in two columns on smaller desktop widths, and six in three columns on tablet. Mobile stacks a compact upload panel above a two-column, four-file library with natural page scrolling. Short desktop windows use smaller thumbnails; preview and delete actions retain 44px touch targets, with icon-only preview on mobile. Image-background controls are removed, and uploads use the service's default image preparation. Existing search, filtering, upload progress, preparation feedback, previews, deletion and pagination remain.
 
 Verified with synthetic in-memory browser responses at 1440×900, 1200×700, 900×800, 390×844 and 320×640. No horizontal overflow; desktop fits both tested viewport heights. Upload, invalid-file recovery, search, type filters, pagination, preview, empty results, refresh recovery, failed/successful deletion and focus restoration passed. Astro check and build passed. Builder review and evidence: `.impeccable/review/media-layout/`. No shipping raster assets or new design tokens were introduced.
+
+
+## Jamdani Loom redesign — 3 November 2026
+
+The whole interface moved to one design system: tokens, base, components and shell stylesheets in `src/styles/`, loaded once through `Head.astro`, with shared `Icon`, `PasswordToggle` and `BrandMark` components. Components keep only layout-specific styles. Earlier notes describing green active states, green step markers or a mobile drawer are superseded: completed work uses leaf green, the current step and next action use rani, and location uses indigo. Features, copy and flows are unchanged.
+
+Client JavaScript fell from about 648 KB to 306 KB (161 KB to 92 KB gzipped). Tabulator loads only its used modules, client form validation uses `zod/mini`, and Media and Campaigns no longer download zod. The Latin font subset is preloaded; Bengali loads only when used. Verified with synthetic data at 1440×900, 1200×700, 390×844 and 320×640 in light and dark: no horizontal overflow or console errors.
+

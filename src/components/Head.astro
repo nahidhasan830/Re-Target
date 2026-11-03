@@ -1,0 +1,15 @@
+---
+import '@fontsource-variable/anek-bangla/wght.css';
+import '../styles/app.css';
+import latinFont from '@fontsource-variable/anek-bangla/files/anek-bangla-latin-wght-normal.woff2?url';
+interface Props { title: string }
+const { title } = Astro.props;
+---
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex" />
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f2f3f7" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b0f1a" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preload" href={latinFont} as="font" type="font/woff2" crossorigin />
+<title>{title} · Re-Target</title>
