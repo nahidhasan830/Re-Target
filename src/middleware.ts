@@ -18,7 +18,16 @@ async function authorize(request: Request) {
   if (!timingSafeEqual(new Uint8Array(actual), new Uint8Array(expected))) throw new HttpError(401, 'Unauthorized.');
 }
 
+const localHosts = new Set(['localhost', '127.0.0.1', '[::1]']);
+
 export const onRequest = defineMiddleware(async (context, next) => {
+  // Plain HTTP would expose passwords and let a reset request mint an http:// link.
+  if (context.url.protocol === 'http:' && !localHosts.has(context.url.hostname)) {
+    const secure = new URL(context.url);
+    secure.protocol = 'https:';
+    secure.port = '';
+    return new Response(null, { status: 308, headers: { Location: secure.href, 'Cache-Control': 'no-store' } });
+  }
   const requestId = crypto.randomUUID();
   let response: Response;
   try {
