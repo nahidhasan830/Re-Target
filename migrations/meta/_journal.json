@@ -120,6 +120,13 @@
       "when": 1790966109694,
       "tag": "0016_campaign_delivery_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1793681701589,
+      "tag": "0017_whatsapp_event_reads",
+      "breakpoints": true
     }
   ]
 }

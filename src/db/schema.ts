@@ -118,6 +118,7 @@ export const leads = sqliteTable('leads', {
   uniqueIndex('leads_owner_id').on(table.ownerId, table.id),
   index('leads_import_run').on(table.ownerId, table.firstImportRunId),
   index('leads_pending_whatsapp').on(table.ownerId, table.whatsappCheckUntil, table.createdAt, table.id).where(sql`${table.whatsappExists} IS NULL`),
+  index('leads_whatsapp_chat').on(table.ownerId, table.whatsappChatId).where(sql`${table.whatsappExists} = 1`),
   check('leads_whatsapp_exists', sql`${table.whatsappExists} IS NULL OR ${table.whatsappExists} IN (0, 1)`),
   check('leads_phone_format', sql`length(${table.phone}) = 13 AND ${table.phone} GLOB '8801[3-9]*' AND ${table.phone} NOT GLOB '*[^0-9]*'`),
 ]);
@@ -388,6 +389,7 @@ export const whatsappEvents = sqliteTable('whatsapp_events', {
 }, (table) => [
   primaryKey({ columns: [table.ownerId, table.id] }),
   index('whatsapp_events_matching').on(table.ownerId, table.matched, table.messageId),
+  index('whatsapp_events_recovery').on(table.receivedAt).where(sql`${table.matched} = 0 AND ${table.event} != 'message.ack'`),
 ]);
 
 export const campaignActions = sqliteTable('campaign_actions', {

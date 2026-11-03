@@ -88,6 +88,8 @@ test('frequent counters and empty WhatsApp work queues use targeted indexes', ()
     ["SELECT DISTINCT owner_id FROM leads WHERE whatsapp_exists IS NULL AND whatsapp_check_until <= unixepoch()", 'leads_pending_whatsapp'],
     ["SELECT shipment_id FROM shipments INDEXED BY shipments_unchecked_pathao WHERE owner_id='admin' AND provider='pathao' AND source_account_id='source' AND status IN ('delivered','partial') AND recipient_phone IS NOT NULL AND delivery_checked_at IS NULL ORDER BY shipment_id LIMIT 5", 'shipments_unchecked_pathao'],
     ["SELECT MAX(completed_at) FROM courier_sync_runs WHERE owner_id='admin' AND provider='pathao' AND status='complete'", 'courier_sync_completed'],
+    ["SELECT id FROM leads WHERE owner_id='admin' AND whatsapp_chat_id='123@lid' AND whatsapp_exists=1", 'leads_whatsapp_chat'],
+    ["SELECT owner_id,id,event,payload_json FROM whatsapp_events WHERE matched=0 AND event!='message.ack' ORDER BY received_at LIMIT 20", 'whatsapp_events_recovery'],
   ];
   for (const [sql, index] of cases) {
     const plan = db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all();

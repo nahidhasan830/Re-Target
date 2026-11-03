@@ -1051,6 +1051,24 @@ test('early and out-of-order acknowledgements match later and never regress deli
   assert.ok(messages(d.id)[0].read_at);
   assert.ok(messages(d.id)[0].delivered_at);
 });
+test('messages that cannot be lead replies are settled so recovery never revisits them', async () => {
+  lead({ phone: '8801712345678' });
+  for (const [id, payload] of [
+    ['stranger', { id: 'm1', fromMe: false, from: '123456789@lid', body: 'hi' }],
+    ['group', { id: 'm2', fromMe: false, from: '120363@g.us', body: 'hello' }],
+    ['media', { id: 'm3', fromMe: false, from: '8801712345678@c.us', body: null }],
+    ['own', { id: 'm4', fromMe: true, from: '8801700000000@c.us', body: 'hi' }],
+  ])
+    await webhook({ id, session: 'admin', event: 'message', payload });
+  sql(
+    "INSERT INTO whatsapp_events(owner_id,id,session_name,event,message_id,payload_json,received_at) VALUES ('admin','backlog','admin','message','m5',?,?)",
+    JSON.stringify({ id: 'm5', fromMe: false, from: '987654321@lid', body: 'old' }),
+    now,
+  );
+  await c.recoverEvents();
+  assert.equal(one('SELECT COUNT(*) n FROM whatsapp_events WHERE matched=0').n, 0);
+  assert.equal(one('SELECT COUNT(*) n FROM campaign_actions').n, 0);
+});
 test('ordinary replies stop remaining promotional parts without marking Do not contact', async () => {
   lead({ phone: '8801712345678' });
   const d = await prepared({

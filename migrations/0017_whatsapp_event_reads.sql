@@ -1,0 +1,2 @@
+CREATE INDEX `leads_whatsapp_chat` ON `leads` (`owner_id`,`whatsapp_chat_id`) WHERE "leads"."whatsapp_exists" = 1;--> statement-breakpoint
+CREATE INDEX `whatsapp_events_recovery` ON `whatsapp_events` (`received_at`) WHERE "whatsapp_events"."matched" = 0 AND "whatsapp_events"."event" != 'message.ack';

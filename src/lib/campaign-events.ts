@@ -149,7 +149,7 @@ async function processEvent(
     )
       .bind(ownerId, payload.from)
       .first<{ id: string }>();
-    if (!lead) return;
+    if (!lead) return matched(ownerId, id);
     const body = payload.body
       .trim()
       .replace(/[.!।]+$/, '')
@@ -199,7 +199,10 @@ async function processEvent(
       ),
     ]);
     await matched(ownerId, id);
+    return;
   }
+  // Anything else can never match; left unmatched, every cron tick would re-process it.
+  if (type === 'message') await matched(ownerId, id);
 }
 function quotedId(payload: Record<string, unknown>) {
   const reply = payload.replyTo;
