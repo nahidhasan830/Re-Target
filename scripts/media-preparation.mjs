@@ -67,7 +67,7 @@ async function setup() {
   if (!records.length) await api(dnsPath, 'POST', { type: 'CNAME', name: hostname, content: target, proxied: true, ttl: 1 });
   let local = await readFile('.dev.vars', 'utf8');
   local = local.split('\n').filter((line) => !/^(MEDIA_PREPARATION_URL|MEDIA_PREPARATION_KEY)=/.test(line)).join('\n').trimEnd();
-  await writeFile('.dev.vars', `${local}\nMEDIA_PREPARATION_URL=${origin}\nMEDIA_PREPARATION_KEY=${key}\n`, { mode: 0o600 });
+  await writeFile('.dev.vars', `${local}\nMEDIA_PREPARATION_KEY=${key}\n`, { mode: 0o600 });
   await chmod('.dev.vars', 0o600);
   state.origin = origin;
   state.configuredAt = new Date().toISOString();

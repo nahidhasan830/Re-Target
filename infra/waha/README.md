@@ -59,7 +59,7 @@ CF-Access-Client-Secret: <CF_ACCESS_CLIENT_SECRET>
 
 Four server-only values are saved in `.waha/worker-secrets.json`, merged into `.dev.vars`, and uploaded to the existing Worker after the tunnel authentication check passes: `WAHA_BASE_URL`, `WAHA_API_KEY`, `CF_ACCESS_CLIENT_ID`, and `CF_ACCESS_CLIENT_SECRET`. Existing admin credentials are retained. Do not use `PUBLIC_` variables or send these credentials to browser code.
 
-Local development uses `http://127.0.0.1:3000` for `WAHA_BASE_URL`; the deployed Worker uses `https://waha.nahidlabs.com`. Access credentials are attached only to HTTPS gateway requests.
+Localhost and the deployed Worker both use `https://waha.nahidlabs.com` for `WAHA_BASE_URL`, with the Access credentials. The application rejects plain HTTP gateway URLs, including loopback.
 
 If provisioning stops because DNS write permission is missing, add the specified proxied CNAME in the Cloudflare dashboard, then run:
 

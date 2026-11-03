@@ -15,11 +15,7 @@ const variants = auth ? ['auth'] as const : ['dashboard','leads','campaigns','us
 </script>
 <style is:global>
   main:has(#page-loading) { position:relative; }
-  #page-loading { position:absolute;inset:0;z-index:1;padding:20px 24px;background:var(--paper);min-height:100%; }
-  #page-loading[hidden] { display:none; }
+  #page-loading { position:absolute;inset:0;z-index:1;min-height:100%;padding:inherit;background:var(--ground); }
   main.page-pending > :not(#page-loading) { visibility:hidden; }
   .workspace:has(main.page-pending) .header-actions,.workspace:has(main.page-pending) .header-title>:not(h1) { visibility:hidden; }
-  main:has([data-page-skeleton=auth]) #page-loading { padding:inherit; }
-  .loading-announcement { position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
-  @media(max-width:760px) { #page-loading { padding:20px; } }
 </style>

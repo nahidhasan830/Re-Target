@@ -68,6 +68,18 @@ export const invitations = sqliteTable('invitations', {
   userId: text('user_id').references(() => users.id),
 }, (table) => [index('invitations_created').on(table.createdAt)]);
 
+export const passwordResets = sqliteTable('password_resets', {
+  id: text('id').primaryKey(),
+  phone: text('phone').notNull().unique(),
+  tokenHash: text('token_hash').notNull().unique(),
+  credentialVersion: text('credential_version').notNull(),
+  expiresAt: integer('expires_at').notNull(),
+  deliveryStatus: text('delivery_status', { enum: ['sending', 'sent', 'failed', 'unknown'] }).notNull(),
+  messageId: text('message_id'),
+  sentAt: integer('sent_at').notNull(),
+  usedAt: integer('used_at'),
+});
+
 export const whatsappConnections = sqliteTable('whatsapp_connections', {
   ownerId: text('owner_id').primaryKey(),
   userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
@@ -326,6 +338,7 @@ export const campaignSendAttempts = sqliteTable('campaign_send_attempts', {
   ownerId: text('owner_id').notNull(),
   messageId: text('message_id'),
   invitationId: text('invitation_id'),
+  passwordResetId: text('password_reset_id'),
   status: text('status').notNull(),
   submittedAt: integer('submitted_at').notNull(),
   finishedAt: integer('finished_at'),

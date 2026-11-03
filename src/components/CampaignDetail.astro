@@ -39,12 +39,12 @@ const {base,id,view='',owner=base}=Astro.props;
 <style is:global>
   #draft-review-link { display:inline-flex;align-items:center;justify-content:center;min-height:44px;text-decoration:none;margin-top:16px; }
   #sending-test-history:not(:empty) { margin:20px 0; }
-  #sending-test-history .campaign-row { display:block;padding:12px 0;font-size:.8125rem;border:0; }
+  #sending-test-history .campaign-row { display:block;padding:12px 0;font-size:var(--fs-sm);border:0; }
   #sending-test-history summary { font-size:.875rem; }
   .campaign-root .sending-empty { margin:20px; }
   .campaign-controls { display:flex;gap:8px;flex-wrap:wrap; }
   .campaign-control-icon svg { display:none; }
-  .campaign-header-status { color:var(--muted);font-size:.8125rem; }
+  .campaign-header-status { color:var(--ink-2);font-size:var(--fs-sm); }
   .workspace:has([data-campaign-detail]) .header-title { display:grid;gap:2px;flex:1; }
   .workspace:has([data-campaign-detail]) .topbar h1 { white-space:normal;overflow-wrap:anywhere; }
   .workspace:has([data-campaign-detail]) .header-actions { flex-wrap:wrap;justify-content:flex-end; }
@@ -75,13 +75,13 @@ const {base,id,view='',owner=base}=Astro.props;
     #launched-results { display:flex;flex-direction:column; }
     #launched-results>.loading-region { flex:1; }
   }
-  .campaign-summary-panel,#launched-results { min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:12px; }
+  .campaign-summary-panel,#launched-results { min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg); }
   .campaign-summary-panel { padding:24px; }
   .campaign-run-state { display:grid;gap:8px; }
   .campaign-run-state:empty { display:none; }
-  .campaign-run-state h2 { margin:0;font-size:1.25rem; }
+  .campaign-run-state h2 { margin:0;font-size:var(--fs-xl); }
   .campaign-root .campaign-run-state p { margin:0;line-height:1.6;font-size:.875rem; }
-  .campaign-run-state .run-sender { color:var(--muted);margin-top:8px; }
+  .campaign-run-state .run-sender { color:var(--ink-2);margin-top:8px; }
   #campaign-detail-actions { margin:20px 0 24px; }
   #campaign-detail-actions .campaign-controls { gap:8px; }
   #campaign-detail-actions .campaign-control-icon svg { display:block;width:18px;height:18px; }
@@ -89,10 +89,11 @@ const {base,id,view='',owner=base}=Astro.props;
   .campaign-progress-heading { display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap; }
   .campaign-progress-heading h3 { margin:0;font-size:.875rem; }
   .campaign-root .campaign-progress-heading p { margin:0;font-size:.75rem; }
-  .campaign-results { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:16px 0 0; }
+  .campaign-results { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin:14px 0 0;overflow:hidden;border:1px solid var(--line);border-radius:var(--r-md);background:var(--line); }
+  .campaign-results>div { padding:10px 12px;background:var(--surface-2); }
   .campaign-results div { display:grid;gap:4px;min-width:0; }
-  .campaign-results dt { color:var(--muted);font-size:.8125rem; }
-  .campaign-results dd { margin:0;font-size:1.5rem;font-weight:650;font-variant-numeric:tabular-nums; }
+  .campaign-results dt { color:var(--ink-2);font-size:var(--fs-sm); }
+  .campaign-results dd { margin:0;font-size:var(--fs-2xl);font-weight:640;letter-spacing:-.02em; }
   #campaign-progress>details { margin-top:16px;font-size:.875rem; }
   .campaign-reason-list { margin:8px 0 16px;display:grid;gap:6px; }
   .campaign-reason-list div { display:flex;justify-content:space-between;gap:16px; }
@@ -100,10 +101,9 @@ const {base,id,view='',owner=base}=Astro.props;
   .campaign-reason-list dd { margin:0;font-variant-numeric:tabular-nums;font-weight:650; }
   .campaign-reason-heading { margin:12px 0 8px;font-size:.875rem; }
   .recipient-heading { display:flex;align-items:center;gap:8px;padding:16px 20px;border-bottom:1px solid var(--line); }
-  .recipient-heading h3 { margin:0 auto 0 0;font-size:1rem; }
+  .recipient-heading h3 { margin:0 auto 0 0;font-size:var(--fs-md); }
   .recipient-heading label { min-width:0; }
-  .recipient-heading select { font-size:.8125rem; }
-  .sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
+  .recipient-heading select { font-size:var(--fs-sm); }
   .campaign-refresh { display:inline-flex;align-items:center;justify-content:center;min-width:44px;width:44px;height:44px;padding:0; }
   .campaign-refresh svg { width:20px;height:20px; }
   .recipient-result { border-bottom:1px solid var(--line);padding:10px 20px; }
@@ -112,18 +112,18 @@ const {base,id,view='',owner=base}=Astro.props;
   .campaign-root .recipient-result summary::before { flex-shrink:0; }
   .recipient-identity { flex:1;min-width:0;display:grid;gap:3px;overflow-wrap:anywhere;font-size:.875rem; }
   .recipient-phone { white-space:nowrap;font-variant-numeric:tabular-nums; }
-  .recipient-identity>.recipient-phone:not(:first-child) { color:var(--muted);font-size:.8125rem;font-weight:400; }
-  .recipient-result small { color:var(--muted);font-weight:400; }
-  .recipient-delivery { font-size:.75rem;padding:4px 8px;border-radius:6px;background:var(--paper);white-space:nowrap; }
-  .recipient-delivery[data-state=fully_sent] { color:var(--green);background:var(--green-soft); }
-  .recipient-delivery:is([data-state=failed],[data-state=unconfirmed]) { color:var(--error); }
+  .recipient-identity>.recipient-phone:not(:first-child) { color:var(--ink-2);font-size:var(--fs-sm);font-weight:400; }
+  .recipient-result small { color:var(--ink-2);font-weight:400; }
+  .recipient-delivery { align-self:start;padding:3px 8px;border-radius:var(--r-sm);background:var(--surface-3);color:var(--ink-2);font-size:var(--fs-xs);font-weight:600;white-space:nowrap; }
+  .recipient-delivery[data-state=fully_sent] { background:var(--success-soft);color:var(--success); }
+  .recipient-delivery:is([data-state=failed],[data-state=unconfirmed]) { background:var(--danger-soft);color:var(--danger); }
   .recipient-result ol { padding-left:24px;margin:8px 0; }
   .recipient-result li { padding:8px 0;overflow-wrap:anywhere;font-size:.875rem; }
   .recipient-result li pre { margin:8px 0; }
-  #recipient-pagination { margin:0;padding:12px 20px;border-top:1px solid var(--line);font-size:.8125rem; }
-  #recovery-controls { margin-top:24px;padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface); }
+  #recipient-pagination { margin:0;padding:12px 20px;border-top:1px solid var(--line);font-size:var(--fs-sm); }
+  #recovery-controls { margin-top:24px;padding:20px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface); }
   .recovery-heading { display:flex;align-items:center;justify-content:space-between;gap:12px; }
-  .recovery-heading h3 { margin:0;font-size:1rem; }
+  .recovery-heading h3 { margin:0;font-size:var(--fs-md); }
   #recovery-form { display:grid;gap:12px;max-width:600px; }
   #recovery-form button { justify-self:start; }
   #draft-editor-slot .back-link { display:none; }
@@ -142,7 +142,7 @@ const {base,id,view='',owner=base}=Astro.props;
     #campaign-detail-actions .campaign-control-icon { padding:8px 12px; }
     #campaign-detail-actions .campaign-control-icon span { display:block; }
     .campaign-results { grid-template-columns:repeat(3,minmax(0,1fr));gap:12px; }
-    .campaign-results dd { font-size:1.25rem; }
+    .campaign-results dd { font-size:var(--fs-xl); }
     .recipient-result { padding:10px 16px; }
     .campaign-root .recipient-result summary { display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:8px; }
     .recipient-heading h3 { flex-basis:auto;margin:0 auto 0 0; }

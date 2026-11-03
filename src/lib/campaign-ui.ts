@@ -10,10 +10,9 @@ import {
   codePoints,
   reasonLabels,
   DAILY_SEND_ATTEMPTS,
-  type Audience,
-  type Content,
   type Part,
-} from './campaign-content';
+} from './campaign-rules';
+import type { Audience, Content } from './campaign-content';
 import type { detailCampaign, campaignProgress } from './campaigns';
 type Detail = Awaited<ReturnType<typeof detailCampaign>>;
 type UIAsset = {
@@ -225,7 +224,7 @@ export function initCampaignList() {
         appendNodes(actions, sending);
         const feedback = node('p', undefined, 'campaign-card-feedback');
         feedback.setAttribute('role', 'status');
-        const edit = campaign.status === 'draft' ? node('a', undefined, 'secondary campaign-card-action') : node('button', undefined, 'secondary campaign-card-action');
+        const edit = campaign.status === 'draft' ? node('a', undefined, 'secondary campaign-card-action campaign-edit') : node('button', undefined, 'secondary campaign-card-action campaign-edit');
         appendNodes(edit, actionIcon(icons.edit), node('span', campaign.status === 'draft' ? 'Edit' : 'Edit copy'));
         edit.setAttribute('aria-label', `${campaign.status === 'draft' ? 'Edit' : 'Edit a copy of'} ${campaign.name}`);
         if (edit instanceof HTMLAnchorElement) edit.href = link.href;
@@ -244,7 +243,7 @@ export function initCampaignList() {
           };
         }
         appendNodes(actions, edit);
-        const remove = node('button', undefined, 'secondary campaign-delete campaign-card-action');
+        const remove = node('button', undefined, 'secondary destructive campaign-delete campaign-card-action');
         appendNodes(remove, actionIcon(icons.delete), node('span', 'Delete'));
         remove.type = 'button';
         remove.setAttribute('aria-label', `Delete ${campaign.name}`);

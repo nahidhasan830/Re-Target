@@ -11,6 +11,8 @@ if (bindings.d1_databases?.length !== 1 || bindings.r2_buckets?.length !== 1 ||
 export default defineConfig({
   site: 'https://retarget.nahidlabs.com',
   output: 'server',
+  // Avoids the adapter's implicit SESSION KV binding, which would be local-only in development.
+  session: false,
   adapter: cloudflare({ imageService: 'compile', remoteBindings: true, persistState: false }),
   security: { checkOrigin: true },
   vite: {

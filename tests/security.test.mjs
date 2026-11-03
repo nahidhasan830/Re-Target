@@ -109,9 +109,25 @@ test('admin API protection covers encoded paths and sets browser protections on 
   }
 });
 
+test('plain HTTP redirects to HTTPS before any handler runs, except on local hosts', async () => {
+  for (const method of ['GET', 'POST']) {
+    const url = new URL('http://app.example:8080/forgot-password?phone=01711111111');
+    let reached = false;
+    const response = await onRequest({ url, request: new Request(url, { method }) }, async () => { reached = true; return new Response('page'); });
+    assert.equal(response.status, 308);
+    assert.equal(response.headers.get('Location'), 'https://app.example/forgot-password?phone=01711111111');
+    assert.equal(reached, false);
+  }
+  for (const origin of ['http://localhost:4321', 'http://127.0.0.1:4321']) {
+    const url = new URL('/', origin);
+    const response = await onRequest({ url, request: new Request(url) }, async () => new Response('page'));
+    assert.equal(response.status, 200);
+  }
+});
+
 test('gateway rejects insecure hosts, userinfo and destination switching before sending credentials', async () => {
   const env = globalThis.__securityEnv, base = env.WAHA_BASE_URL;
-  for (const url of ['http://gateway.example', 'https://user:password@gateway.example']) {
+  for (const url of ['http://gateway.example', 'http://127.0.0.1:3000', 'http://localhost:3000', 'https://user:password@gateway.example']) {
     env.WAHA_BASE_URL = url;
     await assert.rejects(waha.gatewayRequest('/api/sessions'), e => e.status === 503);
   }

@@ -21,7 +21,7 @@ globalThis.__readsEnv = { DB: {
     } };
   },
 } };
-for (const name of ['leads', 'campaign-audience', 'campaign-content', 'whatsapp-restrictions']) {
+for (const name of ['leads', 'campaign-audience', 'campaign-content', 'campaign-rules', 'whatsapp-restrictions']) {
   const source = (await readFile(`src/lib/${name}.ts`, 'utf8')).replace("import { env } from 'cloudflare:workers';", 'const env = globalThis.__readsEnv;');
   let compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
   compiled = compiled.replace(/from ['"]\.\/([^'"]+)['"]/g, "from './$1.mjs'").replace("from 'zod'", `from '${import.meta.resolve('zod')}'`);

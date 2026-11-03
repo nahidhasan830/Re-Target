@@ -1,0 +1,87 @@
+---
+import AuthLayout from '../../layouts/AuthLayout.astro';
+import PasswordField from '../../components/PasswordField.astro';
+import { limitLogin, requireSameOrigin } from '../../lib/auth';
+import { validateNewPassword } from '../../lib/account-validation';
+import { passwordResetForToken, resetPassword } from '../../lib/password-resets';
+import { HttpError, readBody } from '../../lib/http';
+
+const token = Astro.params.token ?? '';
+let reset = await passwordResetForToken(token);
+let state = reset?.state ?? 'invalid';
+let error = '';
+let message = '';
+if (Astro.request.method === 'POST') {
+  try {
+    requireSameOrigin(Astro.request);
+    if (Astro.request.headers.get('content-type')?.split(';')[0] !== 'application/x-www-form-urlencoded') throw new HttpError(415, 'Refresh the page and try again.');
+    await limitLogin(Astro.request, 'password-reset-confirm');
+    const validated = validateNewPassword(new URLSearchParams(await readBody(Astro.request)).get('password') ?? '');
+    if (!validated.result.success) {
+      error = validated.error ?? '';
+      Astro.response.status = 400;
+    } else {
+      const phone = await resetPassword(token, validated.result.data);
+      return Astro.redirect(`/?reset=complete&phone=${phone}`, 303);
+    }
+  } catch (caught) {
+    Astro.response.status = caught instanceof HttpError ? caught.status : 503;
+    message = caught instanceof HttpError ? caught.message : 'Couldn’t update your password. Try again shortly.';
+    reset = await passwordResetForToken(token);
+    state = reset?.state ?? 'invalid';
+  }
+} else if (state !== 'valid') Astro.response.status = state === 'invalid' ? 404 : 410;
+const title = state === 'valid' ? 'Choose a new password' : 'Reset link unavailable';
+const retry = reset ? `/forgot-password?phone=${reset.phone}` : '/forgot-password';
+---
+<AuthLayout title={title}>
+  <h1>{title}</h1>
+  {state === 'valid' ? <>
+    <form method="post" id="reset-form">
+      {message && <p class="form-error" role="alert">{message}</p>}
+      <div class="field"><label for="phone">Phone number</label><input id="phone" type="tel" value={reset!.phone} readonly autocomplete="username" /></div>
+      <PasswordField label="New password" error={error} />
+      <button class="primary" type="submit" id="reset-submit">Update password</button>
+      <p id="reset-status" class="status" role="status"></p>
+    </form>
+  </> : <>
+    {message && <p class="form-error" role="alert">{message}</p>}
+    <p class="intro">{state === 'used' ? 'This link was already used. Log in with your new password, or request another link.' : state === 'expired' ? 'This link has expired. Request a new one.' : 'This link is invalid or was replaced by a newer one.'}</p>
+    <a class="primary login-link" href={retry}>Request a new link</a>
+  </>}
+</AuthLayout>
+<script>
+  import { validateNewPassword } from '../../lib/account-validation';
+  const form = document.querySelector<HTMLFormElement>('#reset-form');
+  if (form) {
+    form.noValidate = true;
+    const password = document.querySelector<HTMLInputElement>('#password')!;
+    const error = document.querySelector<HTMLElement>('#password-error')!;
+    const button = document.querySelector<HTMLButtonElement>('#reset-submit')!;
+    const status = document.querySelector<HTMLElement>('#reset-status')!;
+    let busy = false;
+    function showError(message?: string) {
+      error.textContent = message ?? '';
+      error.hidden = !message;
+      password.setAttribute('aria-invalid', String(Boolean(message)));
+    }
+    password.addEventListener('input', () => { if (password.getAttribute('aria-invalid') === 'true') showError(validateNewPassword(password.value).error); });
+    form.addEventListener('submit', (event) => {
+      const validated = validateNewPassword(password.value);
+      showError(validated.error);
+      if (busy || !validated.result.success) {
+        event.preventDefault();
+        if (!busy) password.focus();
+        return;
+      }
+      busy = true; button.disabled = true; button.textContent = 'Updating…';
+      status.textContent = 'Updating your password…'; form.setAttribute('aria-busy', 'true');
+    });
+    window.addEventListener('pageshow', () => { busy = false; button.disabled = false; button.textContent = 'Update password'; status.textContent = ''; form.removeAttribute('aria-busy'); });
+    form.querySelector<HTMLInputElement>('[aria-invalid="true"]')?.focus();
+  }
+</script>
+<style>
+  input[readonly] { background: var(--surface-2); color: var(--ink-2); }
+  .status:empty { display: none; }
+</style>

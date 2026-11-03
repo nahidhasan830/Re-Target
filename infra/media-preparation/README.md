@@ -13,7 +13,7 @@ npm run media:verify -- --remote
 npm run media:stop
 ```
 
-`media:up` builds and starts the container with a private key copied from `.deploy/production-secrets.json` into the ignored, owner-only `infra/media-preparation/.env`. `media:cloudflare` provisions the narrow Access policy, tunnel route and DNS record, then configures `.dev.vars`. The production URL is configured in `wrangler.jsonc`; deploy application updates through `npm run deploy`. Existing application secrets are preserved.
+`media:up` builds and starts the container with a private key copied from `.deploy/production-secrets.json` into the ignored, owner-only `infra/media-preparation/.env`. `media:cloudflare` provisions the narrow Access policy, tunnel route and DNS record, then adds the key to `.dev.vars`. The production URL is configured only in `wrangler.jsonc` and also applies to localhost; deploy application updates through `npm run deploy`. Existing application secrets are preserved.
 
 Docker's `unless-stopped` policy restarts the service once Docker Desktop starts. Keep the Mac powered, awake, online, and the gateway tunnel running. Start the tunnel with `npm run waha:tunnel` if needed. Docker Desktop's startup-at-login setting controls recovery after reboot.
 

@@ -79,14 +79,14 @@ Secrets belong in ignored local files and Cloudflare Worker secrets, never in so
 | `ADMIN_PASSWORD_HASH` | Salted password verifier; plaintext passwords are not accepted |
 | `ADMIN_API_TOKEN` | Administrative product API bearer token; at least 32 characters |
 | `COURIER_ENCRYPTION_KEY` | Stable 32-byte key represented as 64 lowercase hexadecimal characters |
-| `WAHA_BASE_URL` | Protected HTTPS gateway origin; HTTP is permitted only on loopback |
+| `WAHA_BASE_URL` | Protected HTTPS gateway origin, the same for localhost and production |
 | `WAHA_API_KEY` | Gateway API credential |
 | `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | Backend Cloudflare Access service credentials |
 | `WHATSAPP_WEBHOOK_SECRET` | Stable webhook signing secret; at least 32 characters |
 | `MEDIA_PREPARATION_KEY` | Shared media-service bearer secret; at least 32 characters |
 | `CAMPAIGN_TEST_NUMBERS` | Private admin default test destinations; business destinations are account-owned |
 
-Optional `STEADFAST_TRANSPORT_URL` and `STEADFAST_TRANSPORT_TOKEN` enable the HTTPS relay. Configure both or neither. Public deployment settings, including `CAMPAIGN_MEDIA_ORIGIN` and `MEDIA_PREPARATION_URL`, live in `wrangler.jsonc`; local overrides may be supplied privately.
+Optional `STEADFAST_TRANSPORT_URL` and `STEADFAST_TRANSPORT_TOKEN` enable the HTTPS relay. Configure both or neither. Public deployment settings, including `CAMPAIGN_MEDIA_ORIGIN` and `MEDIA_PREPARATION_URL`, live in `wrangler.jsonc` and apply to localhost too; do not override them in `.dev.vars`.
 
 New password verifiers use `scrypt:16384:8:5:<32-hex salt>:<64-hex hash>`. Existing `pbkdf2-sha256:100000:…` verifiers remain compatible and upgrade after successful login. `scripts/password-hash.mjs` exports a matching Node generator for private configuration tooling. Rotating the configured admin verifier resets the saved admin password to the configured recovery credential and invalidates previous admin sessions.
 

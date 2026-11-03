@@ -18,7 +18,16 @@ async function authorize(request: Request) {
   if (!timingSafeEqual(new Uint8Array(actual), new Uint8Array(expected))) throw new HttpError(401, 'Unauthorized.');
 }
 
+const localHosts = new Set(['localhost', '127.0.0.1', '[::1]']);
+
 export const onRequest = defineMiddleware(async (context, next) => {
+  // Plain HTTP would expose passwords and let a reset request mint an http:// link.
+  if (context.url.protocol === 'http:' && !localHosts.has(context.url.hostname)) {
+    const secure = new URL(context.url);
+    secure.protocol = 'https:';
+    secure.port = '';
+    return new Response(null, { status: 308, headers: { Location: secure.href, 'Cache-Control': 'no-store' } });
+  }
   const requestId = crypto.randomUUID();
   let response: Response;
   try {
@@ -39,8 +48,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
   response.headers.set('X-Request-Id', requestId);
   response.headers.set('X-Content-Type-Options', 'nosniff');
-  // Native form posts need Origin; origin-only referrers keep invitation tokens private.
-  response.headers.set('Referrer-Policy', context.url.pathname.startsWith('/invite/') ? 'strict-origin' : 'strict-origin-when-cross-origin');
+  // Native form posts need Origin; origin-only referrers keep invitation and reset tokens private.
+  const tokenPage = context.url.pathname.startsWith('/invite/') || context.url.pathname.startsWith('/reset-password/');
+  response.headers.set('Referrer-Policy', tokenPage ? 'strict-origin' : 'strict-origin-when-cross-origin');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');

@@ -1,6 +1,8 @@
-import { TabulatorFull as Tabulator, type ColumnDefinition, type Options } from 'tabulator-tables';
+import { Tabulator, FormatModule, FrozenColumnsModule, KeybindingsModule, MoveColumnsModule, ResizeColumnsModule, ResizeTableModule, SelectRowModule, SortModule, TooltipModule, type ColumnDefinition, type Options } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
 import { InfiniteDataSource, type TableLoadState, type TablePage } from './infinite-data-source';
+
+Tabulator.registerModule([FormatModule, FrozenColumnsModule, KeybindingsModule, MoveColumnsModule, ResizeColumnsModule, ResizeTableModule, SelectRowModule, SortModule, TooltipModule]);
 
 type Sort = { field: string; dir: 'asc' | 'desc' };
 export interface DataTableOptions<T extends object, R extends TablePage<T>> {

@@ -73,11 +73,7 @@ export async function uploadAsset(account: Account, request: Request) {
       'Media preparation is not configured. Ask the administrator to connect it.',
     );
   const endpoint = new URL('/prepare', env.MEDIA_PREPARATION_URL);
-  if (
-    endpoint.username || endpoint.password ||
-    (endpoint.protocol !== 'https:' &&
-    !(endpoint.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(endpoint.hostname)))
-  )
+  if (endpoint.protocol !== 'https:' || endpoint.username || endpoint.password)
     throw new HttpError(
       503,
       'Media preparation requires a protected HTTPS service.',

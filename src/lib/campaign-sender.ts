@@ -20,7 +20,7 @@ export async function senderReviewState(account: Account) {
     .bind(account.id)
     .first();
   const attempt = await env.DB.prepare(
-    'SELECT id,invitation_id invitationId,message_id messageId,status,error,(SELECT campaign_id FROM campaign_messages m WHERE m.id=campaign_send_attempts.message_id AND m.owner_id=campaign_send_attempts.owner_id) campaignId FROM campaign_send_attempts WHERE owner_id=? AND id=(SELECT active_attempt FROM sender_dispatch_state WHERE owner_id=?)',
+    'SELECT id,invitation_id invitationId,password_reset_id passwordResetId,COALESCE((SELECT phone FROM invitations WHERE id=invitation_id),(SELECT phone FROM password_resets WHERE id=password_reset_id)) recipient,message_id messageId,status,error,(SELECT campaign_id FROM campaign_messages m WHERE m.id=campaign_send_attempts.message_id AND m.owner_id=campaign_send_attempts.owner_id) campaignId FROM campaign_send_attempts WHERE owner_id=? AND id=(SELECT active_attempt FROM sender_dispatch_state WHERE owner_id=?)',
   )
     .bind(account.id, account.id)
     .first();
@@ -49,13 +49,13 @@ export async function reviewSender(
   if (!sender) throw new HttpError(409, 'No sender state needs review.');
   const attempt = sender.active_attempt
     ? await env.DB.prepare(
-        'SELECT id,status,invitation_id FROM campaign_send_attempts WHERE owner_id=? AND id=?',
+        'SELECT id,status,invitation_id,password_reset_id FROM campaign_send_attempts WHERE owner_id=? AND id=?',
       )
         .bind(account.id, sender.active_attempt)
-        .first<{ id: string; status: string; invitation_id: string | null }>()
+        .first<{ id: string; status: string; invitation_id: string | null; password_reset_id: string | null }>()
     : null;
   if (sender.active_attempt) {
-    if (!attempt?.invitation_id || attempt.status !== 'unconfirmed')
+    if (!(attempt?.invitation_id || attempt?.password_reset_id) || attempt.status !== 'unconfirmed')
       throw new HttpError(
         409,
         'Resolve campaign parts in their campaign, or wait for the active request.',
@@ -123,6 +123,14 @@ export async function reviewSender(
               ? null
               : 'Outcome reviewed. Resend explicitly if needed.',
             attempt.invitation_id,
+            token,
+          ),
+          env.DB.prepare(
+            "UPDATE password_resets SET delivery_status=?,message_id=? WHERE id=? AND delivery_status IN ('unknown','sending') AND EXISTS(SELECT 1 FROM campaign_actions WHERE id=?)",
+          ).bind(
+            input.invitationOutcome === 'sent' ? 'sent' : 'failed',
+            input.gatewayId ?? null,
+            attempt.password_reset_id,
             token,
           ),
         ]

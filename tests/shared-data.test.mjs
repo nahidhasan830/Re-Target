@@ -18,6 +18,11 @@ test('development cannot fall back to persistent local application data', async 
   const astro = await readFile('astro.config.mjs', 'utf8');
   assert.match(astro, /persistState:\s*false/);
   assert.match(astro, /remoteBindings:\s*true/);
+  assert.match(astro, /session:\s*false/);
+  assert.equal(config.kv_namespaces, undefined);
+  const example = await readFile('.dev.vars.example', 'utf8');
+  assert.match(example, /^WAHA_BASE_URL=https:\/\//m);
+  assert.doesNotMatch(example, /\/\/(127\.0\.0\.1|localhost)|^MEDIA_PREPARATION_URL=/m);
   const { scripts } = JSON.parse(await readFile('package.json', 'utf8'));
   assert.equal(scripts['db:migrate:local'], undefined);
   assert.ok(!Object.values(scripts).some((command) => command.includes('--local')));
