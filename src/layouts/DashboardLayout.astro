@@ -37,7 +37,6 @@ const current = (key: Section) => active === key ? 'page' : undefined;
   <body data-focus={focus ? '' : undefined}>
     <a class="skip-link" href="#main-content">Skip to content</a>
     <aside class="sidebar" aria-label="Dashboard sidebar">
-      <div class="paar" aria-hidden="true"></div>
       <div class="sidebar-brand"><a class="brand" href={base} aria-label="Re-Target dashboard"><BrandMark />Re-Target</a><span class="chip plain role">{role === 'admin' ? 'Admin' : 'User'}</span></div>
       <nav class="nav" aria-label="Main navigation">
         {groups.map(group => <>
