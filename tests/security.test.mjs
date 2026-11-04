@@ -104,7 +104,7 @@ test('admin API protection covers encoded paths and sets browser protections on 
     assert.equal(response.status, 401);
     assert.equal(reached, false);
     assert.equal(response.headers.get('Cache-Control'), 'no-store');
-    assert.match(response.headers.get('Content-Security-Policy'), /script-src 'self'/);
+    assert.match(response.headers.get('Content-Security-Policy'), /script-src 'self' https:\/\/static\.cloudflareinsights\.com;/);
     assert.equal(response.headers.get('Strict-Transport-Security'), 'max-age=31536000');
   }
 });

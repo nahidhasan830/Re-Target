@@ -52,7 +52,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const tokenPage = context.url.pathname.startsWith('/invite/') || context.url.pathname.startsWith('/reset-password/');
   response.headers.set('Referrer-Policy', tokenPage ? 'strict-origin' : 'strict-origin-when-cross-origin');
   response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
+  // Cloudflare injects the Web Analytics beacon into every page.
+  response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://cloudflareinsights.com; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   if (context.url.protocol === 'https:') response.headers.set('Strict-Transport-Security', 'max-age=31536000');
   response.headers.set('Cache-Control', 'no-store');
